@@ -1,0 +1,2494 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --al-blue: #003b76;
+      --al-blue-2: #00a0e1;
+      --al-cyan: #62c8f2;
+      --al-red: #e30613;
+      --bg: #edf8fd;
+      --bg-2: #f8fcff;
+      --card: rgba(255, 255, 255, 0.64);
+      --card-strong: rgba(255, 255, 255, 0.92);
+      --text: #092947;
+      --muted: #587187;
+      --border: rgba(255, 255, 255, 0.82);
+      --line: rgba(0, 59, 118, 0.09);
+      --shadow: 0 18px 54px rgba(0, 59, 118, 0.12), inset 0 1px 0 rgba(255,255,255,.84);
+      --good: #008d67;
+      --warn: #e49a00;
+      --bad: #d92d20;
+      --neutral: #71879b;
+      --radius: 22px;
+    }
+
+    html[data-theme="dark"] {
+      --bg: #04182b;
+      --bg-2: #07253e;
+      --card: rgba(8, 39, 65, 0.68);
+      --card-strong: rgba(7, 35, 59, 0.94);
+      --text: #f4f7fb;
+      --muted: #9ba9bd;
+      --border: rgba(255, 255, 255, 0.10);
+      --line: rgba(255, 255, 255, 0.08);
+      --shadow: 0 22px 65px rgba(0, 0, 0, 0.28);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 8% -5%, rgba(0,160,225,.18), transparent 29%),
+        radial-gradient(circle at 93% 3%, rgba(0,59,118,.12), transparent 25%),
+        radial-gradient(circle, rgba(0,59,118,.105) 1.15px, transparent 1.15px),
+        linear-gradient(145deg, var(--bg), var(--bg-2));
+      background-size: auto, auto, 22px 22px, auto;
+      transition: background .25s ease, color .25s ease;
+    }
+
+    body::before, body::after {
+      content: "";
+      position: fixed;
+      z-index: -1;
+      width: 360px;
+      height: 360px;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: .22;
+      pointer-events: none;
+    }
+    body::before { top: 20%; left: -130px; background: var(--al-blue-2); }
+    body::after { right: -140px; bottom: 8%; background: var(--al-blue); opacity: .10; }
+
+    button, select, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .app-shell { max-width: 1580px; margin: 0 auto; padding: 22px 26px 56px; }
+
+    .glass {
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(22px) saturate(150%);
+      -webkit-backdrop-filter: blur(22px) saturate(150%);
+    }
+
+    .topbar {
+      min-height: 96px;
+      border-radius: 24px;
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(360px, 1.25fr) auto minmax(300px, 1fr);
+      align-items: center;
+      gap: 22px;
+      padding: 16px 20px;
+      overflow: hidden;
+      color: var(--text);
+      background: rgba(255,255,255,.72);
+      border-color: rgba(255,255,255,.90);
+      box-shadow: 0 20px 55px rgba(0,59,118,.12), inset 0 1px 0 rgba(255,255,255,.94);
+    }
+    html[data-theme="dark"] .topbar { background: rgba(7,35,59,.82); border-color: rgba(255,255,255,.10); }
+
+    .topbar::after {
+      content: "";
+      position: absolute;
+      left: 2%; right: 2%; bottom: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--al-blue-2), transparent);
+      opacity: .55;
+    }
+
+    .header-left {
+      justify-self: start;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .header-divider { width: 1px; height: 46px; background: var(--line); flex: 0 0 auto; }
+    .header-copy { min-width: 0; }
+    .header-nav { display: flex; align-items: center; gap: 22px; }
+    .header-nav button { color: var(--muted); background: transparent; border: 0; font-size: 12px; font-weight: 650; padding: 8px 0; border-bottom: 2px solid transparent; }
+    .header-nav button.is-active { color: var(--al-blue); border-bottom-color: var(--al-blue-2); }
+    .header-nav button:hover { color: var(--al-blue-2); }
+    .header-right { justify-self: end; display: flex; align-items: center; gap: 10px; }
+    .logo { width: 110px; max-width: 28vw; height: 40px; object-fit: contain; display: block; }
+    .eyebrow { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+    .dashboard-title { font-size: 15px; font-weight: 650; letter-spacing: -.01em; }
+    .topbar .eyebrow { color: var(--muted); }
+    .topbar .dashboard-title { color: var(--text); }
+
+    .sync-pill, .icon-btn, .text-btn {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.52);
+      color: var(--text);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    html[data-theme="dark"] .sync-pill,
+    html[data-theme="dark"] .icon-btn,
+    html[data-theme="dark"] .text-btn { background: rgba(255,255,255,.06); }
+
+    .sync-pill { border-radius: 999px; padding: 9px 12px; font-size: 12px; display: flex; gap: 8px; align-items: center; white-space: nowrap; }
+    .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 4px rgba(0,141,103,.12); }
+    .sync-pill.loading .sync-dot { background: var(--al-blue); animation: pulse 1s infinite; }
+    @keyframes pulse { 50% { opacity: .35; transform: scale(.82); } }
+
+    .icon-btn { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 17px; }
+    .icon-btn:hover { transform: translateY(-1px); }
+    .text-btn {
+      min-height: 36px; border-radius: 999px; padding: 0 12px;
+      font-size: 12px; font-weight: 700; white-space: nowrap;
+    }
+    .text-btn:hover { transform: translateY(-1px); }
+    #visitLogBtn[hidden] { display: none !important; }
+    .header-right .header-nav-select { display: none; width: auto; min-width: 132px; min-height: 36px; padding: 0 10px; font-size: 12px; }
+
+    .executive-hero {
+      margin-top: 16px;
+      min-height: 310px;
+      display: grid;
+      grid-template-columns: minmax(0,1.45fr) minmax(240px,.55fr);
+      align-items: center;
+      gap: 34px;
+      padding: 34px 54px;
+      border-radius: 28px;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 86% 18%, rgba(0,160,225,.22), transparent 30%),
+        linear-gradient(135deg, rgba(255,255,255,.58), rgba(255,255,255,.24));
+      border: 1px solid rgba(255,255,255,.82);
+      box-shadow: 0 20px 58px rgba(0,59,118,.10), inset 0 1px 0 rgba(255,255,255,.92);
+      backdrop-filter: blur(18px) saturate(145%);
+      -webkit-backdrop-filter: blur(18px) saturate(145%);
+    }
+    html[data-theme="dark"] .executive-hero { background: radial-gradient(circle at 86% 18%, rgba(0,160,225,.18), transparent 30%), linear-gradient(135deg, rgba(8,39,65,.72), rgba(4,24,43,.50)); border-color: rgba(255,255,255,.10); }
+    .executive-hero::before { content:""; position:absolute; inset:0; pointer-events:none; background:radial-gradient(circle, rgba(0,59,118,.08) 1px, transparent 1px); background-size:22px 22px; opacity:.55; }
+    .hero-copy, .hero-ring { position: relative; z-index: 1; }
+    .hero-kicker { color: var(--al-blue-2); font-size: 11px; font-weight: 750; letter-spacing: .16em; text-transform: uppercase; }
+    .hero-title { margin: 11px 0 12px; max-width: 720px; color: var(--al-blue); font-size: clamp(35px, 4.1vw, 65px); line-height: .98; letter-spacing: -.055em; font-weight: 760; }
+    html[data-theme="dark"] .hero-title { color: #e7f8ff; }
+    .hero-description { max-width: 680px; margin: 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+    .hero-meta { display: inline-flex; align-items: center; gap: 8px; margin-top: 18px; padding: 8px 11px; border-radius: 999px; color: var(--muted); background: rgba(255,255,255,.50); border: 1px solid var(--border); font-size: 11px; }
+    html[data-theme="dark"] .hero-meta { background: rgba(255,255,255,.05); }
+    .hero-meta::before { content:""; width:7px; height:7px; border-radius:50%; background:var(--good); box-shadow:0 0 0 4px rgba(0,141,103,.11); }
+    .hero-ring {
+      --hero-progress: 0deg;
+      justify-self: center;
+      width: min(220px, 28vw);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: conic-gradient(var(--al-blue-2) 0 var(--hero-progress), rgba(0,59,118,.10) var(--hero-progress) 360deg);
+      box-shadow: 0 28px 65px rgba(0,59,118,.17);
+      transition: background .5s ease;
+    }
+    .hero-ring-inner { width: 78%; aspect-ratio:1; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; border-radius:50%; background:var(--card-strong); box-shadow:inset 0 1px 0 rgba(255,255,255,.88); }
+    .hero-ring-value { color:var(--al-blue); font-size:clamp(30px,3vw,47px); line-height:1; font-weight:800; letter-spacing:-.05em; }
+    html[data-theme="dark"] .hero-ring-value { color:#8edcff; }
+    .hero-ring-label { margin-top:7px; color:var(--muted); font-size:12px; }
+    .hero-ring-detail { margin-top:3px; color:var(--text); font-size:11px; font-weight:680; }
+    .hero-ring.is-warn { --hero-progress: 270deg; }
+    .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+    .hero-title.is-ok { color: var(--good); }
+    html[data-theme="dark"] .hero-title.is-ok { color: #72e4bd; }
+
+    .completeness {
+      margin-top: 14px; border-radius: 22px; padding: 16px 18px;
+    }
+    .completeness-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+    .site-chips { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 8px; margin-top: 14px; }
+    .site-chip { border-radius: 16px; padding: 12px; background: rgba(255,255,255,.55); border: 1px solid var(--line); }
+    html[data-theme="dark"] .site-chip { background: rgba(255,255,255,.04); }
+    .site-chip strong { display: block; font-size: 12px; }
+    .site-chip span { display: block; margin-top: 6px; font-size: 11px; font-weight: 700; }
+    .site-chip .ok { color: var(--good); }
+    .site-chip .late { color: #a46d00; }
+    html[data-theme="dark"] .site-chip .late { color: #ffd77a; }
+    .missing-table { margin-top: 14px; width: 100%; border-collapse: collapse; font-size: 12px; }
+    .missing-table th { text-align: left; color: var(--muted); font-size: 10.5px; letter-spacing: .02em; text-transform: uppercase; padding: 10px 8px; border-bottom: 1px solid var(--line); }
+    .missing-table td { padding: 11px 8px; border-bottom: 1px solid var(--line); }
+    .completeness-empty { margin-top: 12px; color: var(--muted); font-size: 12px; }
+
+    .executive-section { margin-top: 14px; }
+
+    .filterbar {
+      margin-top: 16px;
+      border-radius: 20px;
+      padding: 11px;
+      display: grid;
+      grid-template-columns: 1.15fr 1fr 1fr minmax(180px, 1.6fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .control {
+      min-height: 46px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.68);
+      color: var(--text);
+      border-radius: 15px;
+      padding: 0 13px;
+      outline: none;
+      width: 100%;
+    }
+    html[data-theme="dark"] .control { background: rgba(255,255,255,.04); }
+    .control:focus { border-color: rgba(0,160,225,.62); box-shadow: 0 0 0 4px rgba(0,160,225,.10); }
+    .refresh-btn {
+      min-height: 46px; border: 0; border-radius: 15px; padding: 0 17px;
+      color: white; font-weight: 700; background: linear-gradient(135deg, var(--al-blue), #006ca8 64%, var(--al-blue-2));
+      box-shadow: 0 12px 26px rgba(0,59,118,.24);
+    }
+    .refresh-btn:hover { transform: translateY(-1px); }
+
+    .notice {
+      display: none;
+      margin-top: 14px;
+      border-radius: 18px;
+      padding: 11px 14px;
+      color: #7a4d00;
+      background: rgba(255, 191, 0, .12);
+      border: 1px solid rgba(232,163,0,.2);
+      font-size: 13px;
+    }
+    html[data-theme="dark"] .notice { color: #ffd77a; }
+    .notice.show { display: block; }
+
+    .section { margin-top: 26px; }
+    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin: 0 4px 10px; }
+    .section-title { font-size: 19px; line-height: 1.1; font-weight: 700; letter-spacing: -.025em; color: var(--al-blue); }
+    html[data-theme="dark"] .section-title { color: #8edcff; }
+    .section-sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 14px; }
+    .kpi-card {
+      border-radius: var(--radius);
+      padding: 18px;
+      min-height: 160px;
+      position: relative;
+      overflow: hidden;
+      border-top: 1px solid rgba(255,255,255,.95);
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .kpi-card:hover { transform: translateY(-4px); border-color: rgba(0,160,225,.25); box-shadow: 0 26px 68px rgba(0,59,118,.17); }
+    .kpi-card::after {
+      content: ""; position: absolute; width: 110px; height: 110px; border-radius: 50%;
+      right: -45px; top: -45px; background: linear-gradient(145deg, rgba(0,160,225,.18), rgba(0,59,118,.06)); filter: blur(1px);
+    }
+    .kpi-card.red-glow::after { background: rgba(227,0,17,.10); }
+    .card-label { color: var(--muted); font-size: 12px; font-weight: 720; letter-spacing: .01em; }
+    .card-value { margin-top: 15px; font-size: clamp(27px, 2.2vw, 40px); font-weight: 830; letter-spacing: -.05em; line-height: 1; }
+    .card-foot { margin-top: 12px; color: var(--muted); font-size: 11.5px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .sub-metric { color: var(--text); font-weight: 680; }
+    .progress-track { margin-top: 15px; height: 7px; border-radius: 999px; background: var(--line); overflow: hidden; }
+    .progress-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--al-blue), var(--al-blue-2)); border-radius: inherit; transition: width .6s cubic-bezier(.2,.8,.2,1); }
+    .progress-fill.red { background: linear-gradient(90deg, var(--al-red), #ff6b78); }
+
+    .event-grid { display: grid; grid-template-columns: repeat(8, minmax(0,1fr)); gap: 10px; }
+    .event-card { border-radius: 18px; padding: 13px 12px; min-height: 92px; }
+    .event-label { font-size: 10.5px; color: var(--muted); font-weight: 720; }
+    .event-value { font-size: 24px; font-weight: 830; margin-top: 8px; letter-spacing: -.04em; }
+    .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; }
+    .status-dot.good { background: var(--good); }
+    .status-dot.warn { background: var(--warn); }
+    .status-dot.bad { background: var(--bad); }
+    .status-dot.neutral { background: var(--neutral); }
+
+    .chart-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+    .chart-card { border-radius: var(--radius); padding: 16px 16px 12px; min-height: 360px; }
+    .chart-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .chart-title { font-weight: 790; font-size: 14px; }
+    .chart-sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .chart-wrap { height: 292px; position: relative; }
+    .chart-select { width: auto; min-width: 170px; min-height: 38px; padding: 0 10px; font-size: 12px; }
+    .chart-fallback { color: var(--muted); font-size: 12px; display: none; place-items: center; height: 100%; text-align: center; padding: 20px; }
+
+    .table-card { border-radius: var(--radius); padding: 10px; overflow: hidden; }
+    .table-scroll { overflow: auto; max-height: 570px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { position: sticky; top: 0; z-index: 2; text-align: left; color: var(--muted); background: var(--card-strong); backdrop-filter: blur(20px); padding: 12px; font-size: 10.5px; letter-spacing: .02em; text-transform: uppercase; border-bottom: 1px solid var(--line); }
+    td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    tbody tr { transition: background .12s ease; }
+    tbody tr:hover { background: rgba(0,160,225,.065); }
+    .kpi-row { cursor: pointer; }
+    .metric-name { font-weight: 690; min-width: 260px; max-width: 440px; }
+    .muted { color: var(--muted); }
+    .nowrap { white-space: nowrap; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 5px 8px; font-size: 10.5px; font-weight: 760; background: var(--line); color: var(--muted); white-space: nowrap; }
+    .badge.good { color: var(--good); background: rgba(15,157,105,.10); }
+    .badge.warn { color: #a46d00; background: rgba(232,163,0,.13); }
+    html[data-theme="dark"] .badge.warn { color: #ffd77a; }
+    .badge.bad { color: var(--bad); background: rgba(217,45,32,.10); }
+    .badge.neutral { color: var(--muted); }
+    .site-name { font-weight: 740; }
+
+    .owners-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; }
+    .owner-card { border-radius: 18px; padding: 13px; min-height: 92px; }
+    .owner-name { font-weight: 760; font-size: 13px; }
+    .owner-meta { margin-top: 7px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+
+    .empty { padding: 38px 20px; color: var(--muted); text-align: center; }
+
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 80; display: none; place-items: center;
+      background: rgba(4, 12, 24, .45); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      padding: 20px;
+    }
+    .modal-backdrop.show { display: grid; }
+    .modal { width: min(850px, 96vw); max-height: 90vh; overflow: auto; border-radius: 28px; padding: 22px; background: var(--card-strong); border: 1px solid var(--border); box-shadow: 0 34px 100px rgba(0,0,0,.24); }
+    .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .modal .icon-btn { color: var(--text); background: var(--line); border-color: var(--line); }
+    .modal-title { font-size: 19px; font-weight: 820; letter-spacing: -.025em; }
+    .modal-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
+    .modal-stat { background: var(--line); border-radius: 16px; padding: 12px; }
+    .modal-stat .l { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+    .modal-stat .v { margin-top: 5px; font-weight: 780; font-size: 14px; }
+    .modal-objective { margin-top: 14px; color: var(--muted); font-size: 12px; line-height: 1.55; white-space: pre-line; }
+    .modal-chart { height: 260px; margin-top: 16px; }
+
+    .test-modal { width: min(520px, 94vw); }
+    .test-email-copy { margin-top: 9px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .test-email-form { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 18px; }
+    .test-email-form .control { min-width: 0; }
+    .test-send-btn { min-height: 46px; min-width: 126px; }
+    .test-send-btn:disabled { opacity: .58; cursor: wait; transform: none; }
+    .test-email-status { display: none; margin-top: 13px; border-radius: 13px; padding: 11px 12px; font-size: 12px; line-height: 1.45; }
+    .test-email-status.show { display: block; }
+    .test-email-status.success { color: #00694e; background: rgba(0,141,103,.10); border: 1px solid rgba(0,141,103,.18); }
+    .test-email-status.error { color: #a92318; background: rgba(217,45,32,.09); border: 1px solid rgba(217,45,32,.16); }
+    html[data-theme="dark"] .test-email-status.success { color: #72e4bd; }
+    html[data-theme="dark"] .test-email-status.error { color: #ff9b93; }
+
+    .visit-modal { width: min(780px, 96vw); }
+    .visit-copy { margin-top: 9px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .visit-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+    .visit-toolbar { display: flex; justify-content: flex-end; margin-top: 14px; }
+    .visit-table-wrap { margin-top: 14px; max-height: 420px; overflow: auto; border: 1px solid var(--line); border-radius: 16px; }
+    .visit-table-wrap .missing-table { margin-top: 0; }
+    .visit-empty { padding: 28px 16px; text-align: center; color: var(--muted); font-size: 12px; }
+    .visit-status { display: none; margin-top: 12px; border-radius: 13px; padding: 11px 12px; font-size: 12px; line-height: 1.45; }
+    .visit-status.show { display: block; }
+    .visit-status.error { color: #a92318; background: rgba(217,45,32,.09); border: 1px solid rgba(217,45,32,.16); }
+    html[data-theme="dark"] .visit-status.error { color: #ff9b93; }
+    @media (max-width: 640px) { .visit-stats { grid-template-columns: 1fr; } }
+
+    .directory-modal { width: min(920px, 96vw); }
+    .directory-copy { margin-top: 8px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .directory-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 18px; }
+    .secondary-btn { min-height: 42px; border: 1px solid var(--line); border-radius: 13px; padding: 0 14px; color: var(--al-blue); background: rgba(0,160,225,.08); font-weight: 700; }
+    html[data-theme="dark"] .secondary-btn { color: #8edcff; }
+    .directory-save { min-height: 42px; }
+    .directory-save:disabled, .secondary-btn:disabled { opacity: .58; cursor: wait; }
+    .directory-grid { margin-top: 13px; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+    .directory-grid-head, .directory-row { display: grid; grid-template-columns: minmax(130px,.8fr) minmax(150px,1fr) minmax(190px,1.25fr) 70px 82px 42px; gap: 8px; align-items: center; }
+    .directory-grid-head { padding: 10px 12px; background: rgba(0,59,118,.07); color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+    .directory-rows { max-height: 410px; overflow: auto; }
+    .directory-row { padding: 9px 12px; border-top: 1px solid var(--line); }
+    .directory-input { width: 100%; min-width: 0; min-height: 38px; border: 1px solid var(--line); border-radius: 10px; padding: 0 10px; background: rgba(255,255,255,.58); color: var(--text); outline: none; }
+    .directory-sites { color: var(--al-blue); font-size: 11px; font-weight: 720; line-height: 1.35; }
+    html[data-theme="dark"] .directory-sites { color: #8edcff; }
+    html[data-theme="dark"] .directory-input { background: rgba(255,255,255,.05); }
+    .directory-check { width: 18px; height: 18px; accent-color: var(--al-blue-2); justify-self: center; }
+    .directory-remove { width: 34px; height: 34px; border: 0; border-radius: 10px; color: var(--bad); background: rgba(217,45,32,.08); font-size: 18px; }
+    .directory-remove:disabled { opacity: .28; cursor: not-allowed; }
+    .directory-empty { padding: 30px 18px; text-align: center; color: var(--muted); font-size: 12px; }
+    .directory-status { display: none; margin-top: 12px; border-radius: 13px; padding: 11px 12px; font-size: 12px; }
+    .directory-status.show { display: block; }
+    .directory-status.success { color: #00694e; background: rgba(0,141,103,.10); }
+    .directory-status.error { color: #a92318; background: rgba(217,45,32,.09); }
+
+    .checklist-modal { width: min(1040px, 96vw); }
+    .checklist-copy { margin-top: 9px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .checklist-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 18px; }
+    .checklist-toolbar-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .checklist-sites { display: grid; gap: 13px; margin-top: 14px; max-height: 520px; overflow: auto; padding-right: 3px; }
+    .checklist-site { border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: rgba(255,255,255,.34); }
+    html[data-theme="dark"] .checklist-site { background: rgba(255,255,255,.025); }
+    .checklist-site-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; background: rgba(0,59,118,.07); }
+    .checklist-site-name { font-size: 13px; font-weight: 800; color: var(--al-blue); }
+    html[data-theme="dark"] .checklist-site-name { color: #8edcff; }
+    .checklist-site-count { color: var(--muted); font-size: 11px; }
+    .checklist-row { display: grid; grid-template-columns: 30px minmax(250px,1fr) minmax(140px,.55fr) 130px; gap: 10px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--line); }
+    .checklist-row:hover { background: rgba(0,160,225,.055); }
+    .checklist-check { width: 19px; height: 19px; accent-color: var(--al-blue-2); }
+    .checklist-kpi { font-size: 12px; font-weight: 680; line-height: 1.35; }
+    .checklist-owner, .checklist-category { color: var(--muted); font-size: 11px; line-height: 1.35; }
+    .checklist-empty { padding: 36px 18px; text-align: center; color: var(--muted); font-size: 12px; }
+    .checklist-status { display: none; margin-top: 12px; border-radius: 13px; padding: 11px 12px; font-size: 12px; line-height: 1.45; }
+    .checklist-status.show { display: block; }
+    .checklist-status.success { color: #00694e; background: rgba(0,141,103,.10); }
+    .checklist-status.error { color: #a92318; background: rgba(217,45,32,.09); }
+
+    .preview-modal { width: min(1080px, 96vw); }
+    .preview-banner {
+      display: inline-flex; align-items: center; gap: 8px; margin-top: 10px;
+      padding: 7px 11px; border-radius: 999px; font-size: 11px; font-weight: 800;
+      letter-spacing: .04em; text-transform: uppercase;
+      color: #007451; background: rgba(0,141,103,.12); border: 1px solid rgba(0,141,103,.18);
+    }
+    .preview-copy { margin-top: 10px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .preview-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+    .preview-stat {
+      padding: 9px 12px; border-radius: 12px; border: 1px solid var(--line);
+      background: rgba(255,255,255,.42); font-size: 12px;
+    }
+    html[data-theme="dark"] .preview-stat { background: rgba(255,255,255,.04); }
+    .preview-stat strong { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 3px; }
+    .preview-cc {
+      margin-top: 14px; padding: 14px 16px; border-radius: 16px;
+      border: 1px solid rgba(0,160,225,.28); background: rgba(0,160,225,.08);
+    }
+    .preview-cc h3 { margin: 0 0 6px; font-size: 13px; }
+    .preview-cc p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .preview-cc-list { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .preview-chip {
+      display: inline-flex; align-items: center; padding: 5px 9px; border-radius: 999px;
+      background: rgba(255,255,255,.7); border: 1px solid var(--line); font-size: 11px; font-weight: 700;
+    }
+    html[data-theme="dark"] .preview-chip { background: rgba(255,255,255,.06); }
+    .preview-messages { margin-top: 14px; max-height: 48vh; overflow: auto; display: grid; gap: 14px; padding-right: 3px; }
+    .preview-message { border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: rgba(255,255,255,.38); }
+    html[data-theme="dark"] .preview-message { background: rgba(255,255,255,.03); }
+    .preview-message-head {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      padding: 12px 14px; background: rgba(0,59,118,.07); border-bottom: 1px solid var(--line);
+    }
+    .preview-message-head h3 { margin: 3px 0 0; font-size: 15px; }
+    .preview-message-head span { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    .preview-missing { color: #a66000; background: #fff3d7; padding: 6px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; }
+    .preview-envelope { padding: 12px 14px; display: grid; gap: 7px; border-bottom: 1px solid var(--line); }
+    .preview-envelope div { display: grid; grid-template-columns: 72px 1fr; gap: 8px; font-size: 12px; }
+    .preview-envelope strong { color: var(--muted); }
+    .preview-body { padding: 12px; background: rgba(237,248,253,.65); overflow: auto; max-height: 340px; }
+    html[data-theme="dark"] .preview-body { background: rgba(0,0,0,.16); }
+    .preview-warning, .preview-empty {
+      margin-top: 12px; padding: 13px 14px; border-radius: 14px; font-size: 12px; line-height: 1.55;
+    }
+    .preview-warning { border-left: 5px solid #f0a202; background: rgba(240,162,2,.10); }
+    .preview-empty { background: var(--line); color: var(--muted); }
+    .preview-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+    .preview-confirm {
+      display: none; margin-top: 12px; padding: 13px 14px; border-radius: 14px;
+      border: 1px solid rgba(227,6,19,.22); background: rgba(227,6,19,.07); font-size: 12px; line-height: 1.55;
+    }
+    .preview-confirm.show { display: block; }
+    .preview-confirm-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .preview-status { display: none; margin-top: 12px; border-radius: 13px; padding: 11px 12px; font-size: 12px; line-height: 1.45; }
+    .preview-status.show { display: block; }
+    .preview-status.success { color: #00694e; background: rgba(0,141,103,.10); }
+    .preview-status.error { color: #a92318; background: rgba(217,45,32,.09); }
+    .danger-btn { min-height: 42px; border: 0; border-radius: 13px; padding: 0 16px; color: #fff; background: linear-gradient(135deg, #9d1c18, var(--al-red)); font-weight: 700; }
+    .danger-btn:disabled { opacity: .58; cursor: wait; }
+
+    .card-selector-modal { width: min(700px, 95vw); }
+    .card-selector-copy { margin-top: 9px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .card-selector-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-top: 18px; }
+    .card-selector-option { display: flex; align-items: center; gap: 11px; min-height: 58px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 15px; background: rgba(255,255,255,.38); color: var(--text); font-size: 12px; font-weight: 720; cursor: pointer; transition: border-color .18s ease, background .18s ease, transform .18s ease; }
+    .card-selector-option:hover { transform: translateY(-1px); border-color: rgba(0,160,225,.32); background: rgba(0,160,225,.06); }
+    html[data-theme="dark"] .card-selector-option { background: rgba(255,255,255,.025); }
+    .card-selector-check { width: 19px; height: 19px; flex: 0 0 auto; accent-color: var(--al-blue-2); }
+    .card-selector-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 18px; }
+    .card-selector-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .card-selector-status { display: none; margin-top: 12px; border-radius: 13px; padding: 11px 12px; font-size: 12px; line-height: 1.45; }
+    .card-selector-status.show { display: block; }
+    .card-selector-status.success { color: #00694e; background: rgba(0,141,103,.10); }
+    .card-selector-status.error { color: #a92318; background: rgba(217,45,32,.09); }
+
+    .loader {
+      position: fixed; inset: 0; z-index: 999; display: grid; place-items: center;
+      background:
+        radial-gradient(circle at 30% 10%, rgba(0,160,225,.30), transparent 38%),
+        radial-gradient(circle at 82% 76%, rgba(98,200,242,.16), transparent 32%),
+        radial-gradient(circle, rgba(255,255,255,.07) 1px, transparent 1px),
+        linear-gradient(145deg, #001f3f, #003b76 58%, #006b9f);
+      background-size: auto, auto, 22px 22px, auto;
+      transition: opacity .45s ease, visibility .45s ease;
+    }
+    .loader.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+    .loader-card { width: min(580px, 90vw); border-radius: 28px; padding: 28px 30px 26px; background: rgba(255,255,255,.88); border: 1px solid rgba(255,255,255,.54); box-shadow: 0 34px 100px rgba(0,20,45,.34), inset 0 1px 0 rgba(255,255,255,.95); backdrop-filter: blur(26px) saturate(145%); -webkit-backdrop-filter: blur(26px) saturate(145%); }
+    .loader-logo { width: 180px; height: 50px; object-fit: contain; display: block; margin: 0 auto 18px; }
+    .loader-main { display: flex; justify-content: space-between; align-items: end; gap: 20px; }
+    .loader-title { font-size: 19px; font-weight: 700; color: #092947; letter-spacing: -.025em; }
+    .loader-step { color: #587187; font-size: 12px; margin-top: 5px; min-height: 18px; }
+    .loader-pct { font-size: 44px; line-height: 1; font-weight: 700; color: var(--al-blue); letter-spacing: -.06em; }
+    .loader-track { height: 8px; border-radius: 999px; background: #dceaf3; overflow: hidden; margin-top: 18px; }
+    .loader-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--al-blue), var(--al-blue-2) 72%, var(--al-cyan)); transition: width .45s cubic-bezier(.2,.8,.2,1); position: relative; }
+    .loader-fill::after { content:""; position:absolute; inset:0; background:linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent); transform:translateX(-100%); animation:shimmer 1.2s infinite; }
+    @keyframes shimmer { to { transform: translateX(100%); } }
+    .loader-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin-top: 18px; }
+    .load-item { display: flex; align-items: center; gap: 8px; color: #98a2b3; font-size: 11px; transition: color .2s ease; }
+    .load-item .dot { width: 17px; height: 17px; border-radius: 50%; display: grid; place-items: center; background: #edf1f6; color: transparent; font-size: 10px; }
+    .load-item.active { color: #344054; }
+    .load-item.active .dot { background: rgba(0,160,225,.12); border: 2px solid rgba(0,160,225,.48); animation: pulse 1s infinite; }
+    .load-item.done { color: #344054; }
+    .load-item.done .dot { background: rgba(15,157,105,.12); color: var(--good); }
+    .loader-error { display: none; margin-top: 15px; color: #b42318; font-size: 12px; line-height: 1.5; padding: 12px; border-radius: 14px; background: rgba(217,45,32,.08); }
+    .loader-error.show { display: block; }
+
+    @media (max-width: 1180px) {
+      .topbar { grid-template-columns: 1fr auto; }
+      .header-nav { display: none; }
+      .header-nav-select { display: block; }
+      .header-right .header-nav-select { display: block; }
+      .site-chips { grid-template-columns: repeat(3, 1fr); }
+      .cards-grid { grid-template-columns: repeat(2,1fr); }
+      .event-grid { grid-template-columns: repeat(4,1fr); }
+      .owners-grid { grid-template-columns: repeat(2,1fr); }
+      .filterbar { grid-template-columns: repeat(2, 1fr); }
+      .filterbar .refresh-btn { grid-column: span 2; }
+    }
+    @media (max-width: 820px) {
+      .app-shell { padding: 10px 12px 35px; }
+      .topbar { grid-template-columns: 1fr; gap: 13px; padding: 15px; }
+      .header-left, .header-right { justify-self: start; }
+      .header-right { flex-wrap: wrap; }
+      .logo { width: 110px; max-width: 58vw; }
+      .site-chips { grid-template-columns: repeat(2, 1fr); }
+      .executive-hero { grid-template-columns: 1fr; padding: 28px 24px; }
+      .hero-ring { justify-self: start; width: min(200px, 62vw); }
+      .chart-grid, .cards-grid { grid-template-columns: 1fr; }
+      .event-grid { grid-template-columns: repeat(2,1fr); }
+      .owners-grid { grid-template-columns: 1fr; }
+      .filterbar { grid-template-columns: 1fr; }
+      .filterbar .refresh-btn { grid-column: auto; }
+      .modal-grid { grid-template-columns: repeat(2,1fr); }
+      .test-email-form { grid-template-columns: 1fr; }
+      .test-send-btn { width: 100%; }
+      .directory-grid { overflow-x: auto; }
+      .directory-grid-head, .directory-row { min-width: 860px; }
+      .directory-toolbar { align-items: stretch; flex-direction: column; }
+      .checklist-toolbar { align-items: stretch; flex-direction: column; }
+      .preview-envelope div { grid-template-columns: 1fr; }
+      .preview-toolbar { align-items: stretch; flex-direction: column; }
+      .checklist-row { grid-template-columns: 28px 1fr; }
+      .checklist-owner, .checklist-category { grid-column: 2; }
+      .card-selector-grid { grid-template-columns: 1fr; }
+      .card-selector-toolbar { align-items: stretch; flex-direction: column; }
+    }
+    @media (max-width: 520px) {
+      .header-left { align-items: flex-start; flex-direction: column; gap: 8px; }
+      .header-divider { width: 100%; height: 1px; }
+      .hero-title { font-size: 39px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="loader" class="loader">
+    <div class="loader-card">
+      <img class="loader-logo" alt="Air Liquide" src="data:image/png;base64,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qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqrQHhwQAAAAAgv6/9oMZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB4AkLnYov9qhU2AAAAAElFTkSuQmCC">
+      <div class="loader-main">
+        <div>
+          <div class="loader-title">Building live HSE dashboard</div>
+          <div id="loaderStep" class="loader-step">Initializing interface…</div>
+        </div>
+        <div id="loaderPct" class="loader-pct">0%</div>
+      </div>
+      <div class="loader-track"><div id="loaderFill" class="loader-fill"></div></div>
+      <div id="loaderSteps" class="loader-steps"></div>
+      <div id="loaderError" class="loader-error"></div>
+    </div>
+  </div>
+
+  <main class="app-shell">
+    <header class="topbar glass">
+      <div class="header-left">
+        <img class="logo" alt="Air Liquide" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAADwAAAAhwBAMAAABikNZBAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAYUExURUdwTOMAEeMAEcAbOjVfqzVfq+MAETVfq0AVfOcAAAAGdFJOUwDCbTSK1FePuLQAACAASURBVHja7MEBAQAAAICQ/q/uCAoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACA2YMDAQAAAAAg/9dGUFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVh7w5PFYbBMIyuFNABCg34V7CdxBbXrxRxg/Aacw7cu0ALD0m+VAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA6EKtdenw73S9FA8QgD7dXr3a9/P/WuuswwAIcMSqwgAIcGhJvMyeJwACnFkJWwgDIMCRhbAGAyDAGgwAowT4zXkwAAIcWgZ7ugAIcIKdaAAEOLMTLcEACLAEA8AgAZZgAAQ4dRbsOQMgwImJaJeSABDghG3yrAEQYEfBAAjwIOxDAyDAFsEACLBFMAAIcNNFsEcOgAAnFsGThw6AAPssBwACbBYLAATYNjQAAvxfTEMDIMCmoQEQ4FFsxcMHQIAdBAMgwINQYAAEOOHh+QMgwEaxABBgBQYAAW43DO0VAECAXUcCQIAVGAAEuN2FYAUGQIAVGAABVmAAEGAFBkCAFRgABNgsNAAC7IscACDACgyAACswAAiwX2YAQIDD/D4wAAKccPdCACDAAZM3AgABVmAABNgnsQBAgF1GAkCAXUYCAAF2GQkAATaIBQACbBALAAH+1QJ7LwAQYKPQAAiwb1ICgAAbxAJAgB0DA4AAOwYGQIAdAwOAADsGBkCAHQMDIMB8Pb0eAAiwTWgABHgQxQsCgAC7iwSAALuLBAACbBMaAAG2CQ0AAmwTGgABdhcJAATYJjQAAmwTGgABxiQ0AAJsExoAATaHBQAC3JofJgRAgBP8MCEAAmwTGgABNocFAALsMjAAAuwyMAAIsDksAATYHBYAAow5LAAE2BwWAAKM72EBIMDmsAAQ4NGWwMX7AoAAm8MCQIBdRQIAAbYEBkCALYEBQIAtgQEQYF/jAECA8TUOAATYEhgAAebDOwOAAB/s3b1v20gCQPHEpM519gDXtylcy4l9bgVYhlsBkcH6bgHWAmxD//7tXZXNYi+y5nv4e8WWS3LM6OnNDCkJDAAgYAkMAAABp+LgrgEAEHAB1m4bAMDSBPz8O/v//meaip3DN7cNAGApAn573m4ffkjP4et2+zxJYAAAAaep3j+p9w8a3m4nCQwAIOC45bt/OKU3t482QgMACDgW+4fTrySngw9uHABAtwJ+fXjvxeSbi3bjAAA6FfB+fc7ljJkyeOfOAQD0KODt+twLGh4lMACAgM/aeLUNuqQsCpbAAIDeBHx+/WZUsN8FBgD0JeDz1n5/JP1asAQGAHQk4NdNrAu7Tbwj+tW9AwDoRsAPMS8tcQRv3DwAgD4E/LqOe23jJIEBAAScNX8zRLAEBgB0IODXJD5LGcF7dw8AoHkBJ7NZwgheu30AAG0L+O0h3RVuk531i9sHANC0gN+StmSyaWgv4wAANC3g1IupQ6qL3Ll/AADtCjjDZqZHCQwAIODkTx/9mTtPIgEACPj7iMzksFsv4wAAEHB2/374MHoSCQBAwFm2P/9g4BSboT2JBABoUMA5/ZvIwO4gAEBzAo794ws/Y0hg4J1bCADQmIBz+zeJgW3DAgA0JuD8/k0yC71xDwEAWhJw3vXfdAa2DQsA0JKAy/g3hYHdQwCAdgRcyr8JngfeuYkAAK0ION/7N9Ib2AuhAQDNCHhT8pJXtmEBAJYp4MLKurMNCwCwRAF/6+yi3UUAgBYE/NrbVe/cRgCA+gVcw7uj4r4Sy9uwAAD1C7jcA0jfM9qGBQBYloArkdXY1aI2AICAW4nFmFuhPQoMAKhcwPs+r3zjRgIA1CzgmrYrxdyIZRsWAKBqAa9ruvSYy8BuJABAxQLe1HXtEZeBd+4kAEC1At73e/HmoAEA1Qq4vr3CEZeB124lAECdAi75E4R/Rbxl4INbCQBQp4C/dX35HgUGANQp4EpXSaeO+x4AQMDVLpKO5qABAD0LeFfrANyZgwYA9Cvgih/TiTUJvXEzAQCqE/C63hGINQn94mYCANQm4N0ChsAcNACgNgFX/p6oyRw0AKBLAVeuppU5aABAjwJ+WcYgmIMGAFQl4PrFNJiDBgD0J+AGvHRnDhoA0JuAm/ilvskcNACgMwFvWhiG0Rw0AKAvAX9b0Dgc3E8AgEoE3Mq07GAOGgDQk4B3rQzEvTloAEA/An5tZiCGaUlfNwAAnQu4oSRcLer7BgCgawE3JaQYCbx2RwEAKhDwpqWhWJmDBgD0IeDXxY2FOWgAQAUCXrc1FjHexuGOAgAUF/DLAgdj55YCAJQW8Lq1wRgX+KUDANCdgF+WOBpehgUAKC3gBkdjXNjGbwBAhwJ+WeZwHNxTAICSAn5btzgc4QnsQSQAQFEBvyx1PNZuKgBAQQE36qHwBN65qQAA5QT8stgBMQcNACgo4HWrAxKcwB5EAgCUE/DLgkdk464CAJQScMMSGi0CAwBaFXDT66CTRWAAQKMC3rQ8JKvFrn8DABoXcOMNOJmDBgA0KeBN22Ny5xeRAAAtCrj1B3EGDyIBAFoU8K71Qbm3CAwAaFDAzftntAgMAGhPwC+LHxWLwACAAgLetD8qo0VgAEBrAu7iPRTT4r+DAABaE3AX8llZBAYAtCXgPqZfB7MAAIC2BHwwLhaBAQD5BbzuY1xG8/AAgJYE3M3k62QRGADQkIC7Sb+V7yEAgHYE3M/i52AcAADtCPhgZCwCAwDyC3jdz8iMFoEBAK0IuKulz6BtWF4HDQDIKOCuuu/eIjAAoBEBJz7Z4Xa7fXz+H9vt9mvio429T8YPXz9//uVTLP7+rmOf/v9dd/Cv7GPJy/2Y6E+IQlyc/Af9pfkr+ETAtcy7bh+n4/GP08Jv++261rGpfDLg6+dPV3NUfnvX8U8/+D86+Ff2t9OHMYGATz72v8mtia9zzf9BL06+gn8RcA1bf4ft81/M9B6ft8nGZtXpfvDhy69zfFIJuIcCbkTAv30AAVcl4JmAy697jo///7j7ROIfutyPlsS+ClgBg4AVcEkBp5mBvj1hN/L+ob7BqTN+P1/Nc1sCVsAKGAqYgIvMQI8nPgz0muLgqyrn4wP0++ucDgWsgEHACriUgBPMQA+Ppx9+nyCVuloETqpfBayAQcAKuJyA4xtn+74TeKhqdGpbBL6Z5yYFrIAVMBQwAeeecz119vk758X+9Bor3JJ2Hl+u5kYFrIAVMBQwAWcuvtu3M6QXO4JDXkdZkTkSzz4rYAUMAlbAJQW8i3tij+edxb6e4dlV80dOn78KWAGDgBVwOQFvoibb2ekZdxo6ZA66mt9jyJC/ClgBg4AVcDEBR52BHgOmft+ifhNofxfWxdXctIAVsAKGAibgfHugw34GIaqBQ8anij/wl3meFTABK2ACVsAdCzii9W4rOpexlkn5M7mZWxewAlbAUMAEnOuhm7uqvg20vQvrep4VMAErYAJWwF0L+FCTf2Ma+KnhXVhDRv8qYAUMAlbAZQQczXh3lZ3Pqt1dWMPVPCtgAlbABKyA+xZwtBnoVW1r0kOzu7Dy+lcBK2AQsAIuIuBYs61jLP/G2wv91OgurIu8/lXAChgErICLCDiSauL593cDR/ooW7W5Cyu3fxWwAgYBK+AiAo40aTodYxq4+JeCgruwhtz+VcAKGASsgEsIONJ2o6j+reCsyu3Cyu9fBayAQcAKuISAdxWdy3d8i3Ja9+3twirgXwWsgEHACriE9KJ8atwdo7MpPAe9KfRXvZ5nBUzACpiAFfACBBxlqnU8JiDKx1lzu7BK+FcBK2AQsAIuIOBDjFnTKYWAX8uO0aHI3/RmnhUwAStgAlbAixDwppYTSbMMvCrr/3T/PhUwAStgAlbAjQu4qOTSfzk4/2VYb1Xf3AqYgBUwASvgxgUcofPSTEDHcuBUdg36fSN5NStgAlbABKyAFyLgXbUT0JG+HtwXnZx/H9ezAiZgBUzACngpAg7/zFgdExIuwfM3aB9y/z1v5lkBE7ACJmAFvBABh0/yppuAjnR+zezCuphnBUzACpiAFfBSBPxSw0lUeoKZBVxsAVgBK2AQsAIu4L5duRneXJPQl428jPJ6VsAErIAJWAEvR8DBHxlTagEHd+hYcAE6yb9MBUzACpiAFXD7Ag62290xOcGR3sTLKId5VsAErIAJWAEvR8ChK6xDev+G78M6e5gOC5mAVsAKGASsgLMLeFf8DDJ8S7gsNj/QyAS0AlbAIGAFnF1/gZ8Y4zELpc4y38soS+6AVsAKGASsgPML+K30CeQp0fq3QZedgFbAChgErIBz+y9wcjdTAB/fNoXGaVPfPa2ACVgBE7AC7kHAu7DjT5kEHJrAl4XGJ4HRFDABK2ACVsBdCDjsA2N1zEZYip5d6oc8f8ebWQETsAImYAW8KAEHLgFP+QQcmMB1b4Me5lkBE7ACJmAFvCgBhy0BZwzg0AR+qlrA17MCJmAFTMAKeFkC3rUSwKEqPPs3gSv7RqmACVgBE7AC7kPAQVmZNYBLnWsOgVzNCpiAFTABK+BlCfit5MGzJvBQZuY78r9IBUzACpiAFXAnAg5y2njMTNCH21Rkkr6ZAFbAChgErICzCvjQUAAH7hh7KnHQdgJYAStgELACzirBkPnV7AEclsCXJSYJTpocv5oVMAErYAJWwEsTcMjHxX1+AYdMB5/7fSH5zzHczAqYgBUwASvgpQk4RC5Dfv+GybDS55AqCWAFrIBBwAo4p4BDplcvCwg4KIGfCkzTtxPAClgBg4AVcE4Bh/hsKiHgkG8M91UKuJYAVsAKGASsgHMKOMAtq2MRCpzxYREBrIAVMAhYAecUcLEDl3gSacx/yKgmU8AErIAJWAF3I+CAPU1DGf8GbcOq8Tmkj7MCJmAFTMAKeHkCDmi7y0ICDlm2fsrv/HYCWAErYBCwAs4o4MP5x51KCTigR+/zT9S3E8AKWAGDgBVwRgFvzj7seCzG+Z9wq+xH/CnXswImYAVMwAp4gQJelzlsqddXj9m/p0T8JqmACVgBE7AC7kfAAYubUzkBB5x1db+HdD0rYAJWwASsgBco4POXU1fHgpwfpFPu5v4Jw6yACVgBE7ACXqKAD0WOWvBR4KfcB/wJ/5wVMAErYAJWwEsU8NkpOZT0b8Ac9GXumYJoFlPABPwf9u7gt20ci+N4bDn11XYAn2UH0NlJAeeaW66++Ro7gM4BmqL//s7Ozu60O44rPj4+PlLfh54rSpT50Y+kFBIwAJOAATj3DHREu2fmq85KP0QSMACTgAGYBFwVwGXOQEdMCc+sL9T16noSMACTgAGYBDxGgMUzq3lnoGMSqasXgV1twSIBk4ApACYB2wEsDpKZZ6Aj5qBfjI93tfY9CRiAScAATAIeJcDvhc5ARzw6CD9GeUjSdWsSMACTgAGYBDxOgMW5Lre/8jnoufGjis7P8Nr9vdxut49XKhXAj4Orhl9ZVoCb+6HV3lAF1PAOvScBVwywdKjIPgMtf3aYGSfuaxW/BWu5/aMLf9OLPfOXpQNMUSTgCgEudgZaPics3D6W4kXg2C1Yp+2goR6AAZiiSMDuABarcswPsLjtfgCOm4E+DZ2cAmAApigSsDuApfOqsx8Oamd6uVJ8iSNqBno7+DAADMAURQJ2B/C78IhzDwAfbC+Xfr/FzEAvAwZ5AAZgiiIBuwP4YH5EB3PQc9vArTKk/3/dhRwHgAGYokjA7gB+FkY3D/6KJ4VvTa/VlRLPQJ/aoOMAMABTFAnYHcC2hDl5EWlmO1vw+WOM2N/AAR6AAZiiSMDeAJZmyCcfAL8Lm+/kSxzSGehz6PgOwABMUSRgbwBLV1GPPgC2bb46wMIZ6PBP0wEwAFMUCdgbwMK3kGY/nJTp9dJ+Ebix8heAAZiiSMDuABaGulsvAD/L2v/kAuCJlb8ADMAURQJ2B/Cz8fGcLALPXQDcWey/AmAApigScE0AH70ALDRRluCVP4XVmPkLwABMUSRgdwDLDudmCdj4BHQ7TTQD3YoOBcAATFEkYGcACzPdrR+AZRFe+B0R3WF1n/r7VwAMwBRFAnYLsHAG98kPwO+yM/DwKay1zQYsAAZgiiIB1wPw0Q/AH5YX7DnP7Ru5AAzAAExRJGB/AMvyY+PHX+kkuuyCHTIN53ELwAAMwBRFAvYHsEwUR3uwpOuyT5bz3Zcr/CUkOY4ADMAURQJ2BvCz6GhzTwAfDE9BE+DGbgIagAGYokjAlQD84glgGYqyfdzfFLss/CWkhfxgAAzAFEUCdgaw7GhHTwDLdmHNDI91ufZWO6ABGIApigRcC8Ce9mDZnoMmwGuzHVgADMAURQJ2B7BsC/HMF8DPopPI/S3Kxm4HFgADMEWRgN0BLEt0c18AH0QncTScsr9UwUvAUUM6AAMwRZGAfQH8zfJgvnZhvWQGOHQJ+C7qaAAMwBRFAvYFsMyuoy+APwyvmN64urYMwOMFuPn6V2n0HAD/Wn9c1QaGANhfAv7Pz94/wAfRyfnyV7gwK/sSx7PaHWIagEcJ8Nftcq2zhxyA/3FpN39f2+Vye0/gB2AXCbh5/PnW7E/Llc3NKQRY5ImzPVjCWDrPC/DENACPD+Bms9Z7iQuAfxniNhdmb5ZbDAbgzAn44p3575tzdV8TwLfeADY8CzWAA5eAY1kcGcDTjepb1AD80xj36Skv728oAM6UgJvH5dUGJDb4xTA7PnkD+GCX4w9aHdaZBuBxAdxslD9jAsB/1fb6zoXTFpQAOEcCbjYDHgJSTtIIAbY8VroS7eWWAfyu1WG2AXhUAD+uewDOwO+fgxwpGIDNE/D18PtTrZL9LGUoyrYvHb0BLNoG3WQFOPBvAbcAPLg2+h/yBOBPn2v+OdS2NxQAGybgwfymJNgQYG+boKXPEVn/GkPY3wKOx2M0ADddD8Apruvw1+ZWyATAZgl4ugnLMqc0t+eLXXR0twlauJR9NLtiFypsCXgBwNFOAHCCaQVCMADnTcCB/CZbJjEE+NYfwM9ml0wL4LDPcMQfbyQAX8lpAGwSf1XeWqdIwMNmn9e9pBLMQ7/YrWjO/QF8KA3gsM9wKJiY6mCbzWo57N/ge74Z9j+2gVAUD/B06JVWfx3oUTDEffZ/TYadw6B2Db4gG42oNfhOb9U71GZzefN1u92uhp/ncrPMm4CbTS8s/RBsCPCLP4DfSwM4bA9W6xfgtf5JNOJp+atBrXiAh3+65ax7YNEwd97FXMKT8k1tOmfVeu/QC/XrV+P0K0UCnsa0eOUC4EMlAItYFL3OrPT3CL9Y37z5Ad4pA9wGNmZEAKuuIjSdcMjdAXAhAH/2ASnN0m/1Q1yDzjsHAD9LDvWjEoDnGQEOGtReqwA4fQLuegBWH68b8dh8WWAAdgbw1EDfFAl4E92ktkyAG4cAi1iUbSbT6a6ge76tAuDkCfihB2D1BBwzzXdxhANgVwAHvUPrKAE3Gk8N90UC7PAtJNl7SBkBbswfHutPwNMegNXH62lcxtgBsGuAH9dG/Gon4KlOw+9yA2znlsP3kGZmlyxuXHutA+BdWoB/+0hMArb296LAAOwG4KkZv9oJWK3ld5kBNls6rQfgZ9uxVGkGusIE3AauqpOAzf29JDAAOwG42Rjyq5uAH/XatSoP4CePAB/MFrNVAN6b37q1J+BJD8DaCXiqMMCdAdgnwHazz+oJ+FGzXaucAH+3o97ji8D5AA7ZBP1WCcBJ14AH7MkgAWeZ51sBsEOAbeOvbgJ+1G3ZKiPAH9UA/FEWwCFDW1sJwNoJuA2cUiABB47RShHpDoDdAWy6+qucgKfaLbsrDOBjNQAfrSa7hcRojuR1J+BpD8Da47XaGN0CsDOAH8z51UvAU/223ZUFsEd/ZZPp2QAOuYmUfnt1rwF3AKydgDu9sXcHwK4A3vQZyq+/OpOMIoAlf9y2cQnwD7NrdjAdSvv+tRaAtRNwG3g9ScC5QtIZgB0B3HQ5/FVKwInmztuCAJ6NHOB3hdtob/x0VnsCXgOwcgKeqI5vdwDsBuBm3Wcp140/7fIA/F4PwM8lAdxZ37h1rwE/9ACse6qN8vjWArATgHP5q5OAO7/NM8Pkth6An3IBHPAjOFcDsHYCbgPHFBJwkhs09NoDcE6Ap5n81QkSCSfPz1kAlqxnzn0CfLAC+JuphlpLwDUn4H0PwLqnulcf3+4A2APA+fzVSMBJN2/flQLwUz0AzzMBHDLB11YDcKo14KYHYN0EPEkwvrUAnB/gJpu/Gj0wTdvANgPAZgunPj+FJQL4w/ZO2lUDsHYCbgOfi0nAOYfpMwBnBzinvyf3rY/ciDV2gL8VBPDE8r6tPgGvAVg3AadZaVsAcGaAc/qr0ANd6haeAdj4U1i3mQD+0hsNpWNYA570AKx6qpM0w9t/AwYA5wK4y+lvdJIw+HrXogiAjwBs+EtY1AOwdgJuAxtAAlbfoBBUbwCcFeCs/kb3wNTiIWFnDfBu3ADP/APc1gNwmgRsO4iNIAGnG6dbAM4I8ENef09mVz/TJLQZwD79FX0MOhfA6wzDeK1rwB0AqybgSerhDYCzADztM1dc8/c2jVz4B7gZO8DfLTHU+yua9SXgNnDClASce6NOC8C5AM67ASt6JLN6fIiYhBYBfFMPwD/KAdgYjaoT8B6AVRNw0qRxBuBcAOf2N7IHzJp/dg/wDIANZ4PeKgI4yRrwGoA1TzVx0lgAcB6AH7L7G5WA93btbAFYWFbT6d8NB1K9TdCV7oKe9ACs+dzWpR3dzgCcBeDsC8BxPTAt4UEBgIsB+IvB89hIEnAHwJqnOkk9vC0AOAPA2ReAIxNwZ9nQO0OAv9cE8HONAO8qAjjBGnDQO6sk4PxLbWcAzgBw1zsokxlDjdr5Bvh27AD/iP4ld6bjRrUJuA38aZKAHYx0LQCbAzzx4K88AVvn9zcANvuDwN4BPtUEcIIEvAZgzTHEYKQ7A7A1wB4moGN6YG/d0haA6wZ4bWpGxWvATQ/AiqdqslW2BWBjgF1MQMuzhP0GsrNrgOcAbPdLfqsJYO0E3IZwSAJ2kpTeANgWYBcT0BE9kOH5obUC+KMmgA/FADz8TnglAV9LwGsAVjxVo6m+PQBbAuxkAlqcgKeltHX0CbgYgAMmThck4CsXJ/Dv9pCAtW7LqFoDsCXA+95JJb/qirUwApgE7BzgtiaAtRNwOwFgxVN1M1IDsOK9Oy2rQ51MoJ8AuGKApyMFWD0BdwCsl4C9TFUCsOq927np0YICsCgCA7AVwDuzcVRzEK8vAd/3AKx3qg89ANcH8KSwDvXS/pNfgJ9I23Nx4QAAIABJREFUwHYA39QEsHYCXgKwYgJeA3CFADvq1bLavwBgEnBlAGsn4DUA653qpAfg+gCelNahbtp/BmALgI85EvCXtDftaBJwD8B6CXgNwPUB7Gpdv7AA3wKwV4BjR9b9SAFuAdhtAp72AFwfwA/FdaifAH8G4FoT8N6UDBIwCfj31QFwfQA3rnq0tBXsFoArBbgbKcAkYLcJuOkBuD6A9+V1qKMV7DcABmASMABbJOA9ANcHsLOnqsICcPAPmPeAS1kD7pKNoyRgAJacqrOPcACwyr27L7BDPe1LuAPgOhPweqQAk4C9JuBJD8DVAextWSFhUHHxyADAAEwCBmDJqXYAXB/ARX7azNUDxAKARw7wKwkYgNMn4GkPwPUB7G1ZobwZ9HNygL8DMACTgMeegPcAXB/AZX7aTNS3PrZhATAAk4ABOGkXAnAxALvr1AIfIN48AnwLwGYUkoABOP147XALFgDH3ruTMjvU1wPECYABmAQMwGkTcAfA9QHsr1PD2u9jX0LINqwnAAZgEjAAh55q0wNwdQBPC+1QZ/sSQi67VQKeATAAk4DrScATAK4P4L2/Hg1qv5enwoAf8ZORJaMH+DsAk4ArSsAdANcHcKkd6u2pcAHAAEwCBuB0CdjnDDQAR927Hmc1ilzCPgNwdQA3YwWYBOwxAU8AuD6A16V2qNoIcFouN9vVchl7JYb/iudGADcADMAk4GoScAfA1QHs8dNmQT0Qt4R92t7//eNrHjcxCL+mBXgHwABMAh5xAnY6Aw3AMffuvtgOjU/wp9U/f3iPG4NmWwF8M3aAPwC4pAS8/F/djQfgtwT/JwAXA7DLHjVJ8Jf4/XNIERO8SwrwMwADcLUJ+LS611awugTcAXB1ABf8abPIBL/6/Ef3VZiqX90BfARgAC4gAa++3uhXbQk4+lIvV9vt/Xa7XS4B2AvAPh+q0s9An65fd9nfZxx85W+tAH4BYAB2n4BXu5ub8QJ81v8vL17kn2cYmoiVNgBWBLjkT5vFzECvfvv/imDfATAAk4BVn4VJwArbdU7bCyttawDODrDTZf3UM9D3AwYWye25AGAAJgHrPguTgOMm+z4f7zYAnBtgnzPQpxQXOvSRuxFcm6GXfmaF1tPIAf4GwM4T8P3N2AEe2oXi7aafz/A3/2Lv3n0V17UwgOcB7DZnRkrN7COlzpxHdktHS0dLQKJG2vD/3+rqVldkLa9X7I9iSnbwsv3zZyeZAQC7Ahz1wTLVHeh54Wjj9M4xGMAfABgAB07AatvPGSbgncYS5zcA9gR41a82Y+5Az6NCFYl70CyAH4x+uAXAADhuAlb1N7cEzEur76Y73s0uAFgG4Jg70IQK9Jr+Ms6Bb8EA3hQO8AMAR07Aqv5mloB5DX0d5Sc5ACwF8Lpfbcb7AXul+Zd05SwXvwEwAM4qAev6m1kCZu1WLrEg/SAYADMBTt2Bnv/4JHx+yVdgpz3ma53vZ72jmXNHbwuAAXDUBPyzAsDL52vGadvSO8x7AOwDcNLS548/ib22ES4o5weQxzy1219iAVwVDvAJAIdNwNcKABNK2Cu2cA+APQBOWLzOn/Qu24hXoDUY873GX7AD+AyAAXDIBDyPAJgyZWiucBLPgQEwr935O9CfnDaRT8C1wZinPuikF0xZAB8BMAAOmYD3FQAmlLBWXeE0ANgBYO4ONPPVrfIJeLIY8781/gYHrRcANnl7GAC2SMDqG9CZJeBJd4XzFwC2B5i578B9d418Aib+gJ/atVw+I7J2hjkX/wWAAXDABKy/AZ1ZAiZP1sTZ7jcAtgaYt+3Af3ZePAG3Gt0ktZ2usQD+AMAAOGAC/lkBYMqMoX+7Sw+AjQHecdr6yu+q4gmYeCzCXjnQtupHNYA5Tb8FwAA4XgKeKwBMKqH+7S4tADYGmLPkSTm5EU/ANBhvFhe+tKCso1mOJpuyAR4BcMgE3AFg2pxKTUuMtPEbAJsC3Br7K5+Ae90l4f8+pBsgLqEAbssGuALAEROwSQDOKgEPBhN1D4AtAa6N/RVPwLRg2tlMwwsbyQzgCgAD4HAJuAPAxAnD4ha3BgBbAjzR/R2NAJ6FWyR5zU1qqyVf+GWlVtDnkIwAfgHgiAnYJgDnlICJNv40mOYAcCLA5A2H1CcHpBMwaVems5qHl1WUBfADAAPgHBJwB4CJ83VtssBpAbAdwPTG3ldWAM/CbZy+5p6Ep5cPM4A/Sgb4CYAjJuAKABNLONkscGoAbAYwua2Tn9wTTsBtzMXDsvZnscjiZAuAAXCsBHwDwNT5grRdyb9Vh/lOaADMaH/qfn/6q+OEE3At3kOE9rtnLRZZnGwAMACOlYD3AJhaQqv2rQGwFcDEtY7Aq+OEE7D0rrBczxwjAdwCYAAcKgFfKwBMbI/GrH17AGwDMHXcpBMmnYB76Q4i9ucWlJSVS3m3FJ0LBvgbAMdLwB0AppaQFEyTNhh+A2AbgGv7VatwAjYe8jvRqZi3Mcy68GPBAD8AcLwEPAJg6tw63a3SBusUGADTsZzsB41sAm6Mr74VXa3wNoZZv+MLAAPgQAnYbAc6owQ82KWNCQCbADyQWljk/y6RTcA7rUkqvcVmLYAPnOveFgzwCQCHS8AdACbP14b3m7YA2ARghQa2TcCEldreeEQtGc52AG8KBvgAgMMl4BEAU0tIaePktDEAYAOAG4dFq2wC7mUXJKIdaK+iCTPQtQAYAMdJwHY70Pkk4NpyfdMAYAOADd+jrJOAW+vlAyVzX5QA5h1pngGwBcC3v+U+GSfgCwAml3Bnur7pAbA+wKSj9s4a4Lvol40BhxTv3mTeUzXHcgEeDQH2+awuAe8BMHm+nkzn6h0A1ge4F29e4wRcW64JqT1oVlKR916Jj3IBrgBwsAQ8VwCYXMLe1K4WAKuLQ2rjzhzgBRWYzC+fcnvC++/6sgN4C4ABcJQEfAXA9CbplbpD8jwHgJl9vPFYs4om4N788ikl2OsAzHsVVlsswC8AHC0BdwCYXEJCE+9tLx0AMwGuPYaMaAK2XRNSB8L7NuPtC/Ou+1wqwE8AHC0B7wEweb5uTOlidHoATAWYcg/WaA/wbGqhwt7MRWlf+MC67CMABsAxErDlEXA2CbhW6g1ie9AAmApwf7euqfBCrrZdE1JH9PtG2xgC/FEqwN8AOFgCvgJgepss/x2d9bUDYF4nd9kzkkzAO5cR38j9gI2ZWyHfhWUD8AMAB0vAFwBML+FgKRen1wNgojmtdNuaJ+DJeE1ILKsWwDxRWgAMgGMk4D0Aps/XvdzML95PADCnDIQths4D4FmufWVH1iD3Z1luMQ81z4UCfALAwRLwCIDpJezNJ+sdAFYF2KdnSiZgp5s+armqWgL8VSjABwAcKwGb3oOVSwJu5YsmOFUDYAbAk+B3uSTgxX1S+MyplVuLslIp88HWLQAGwBES8BUA00vYOCxvALAqwMuvrnMB+C72VdJnTr0Y/Lxng3hXvSkU4BEAx0rAFwBMn69rnb4gc9YGgDkA+3RMwQRcG5aS1TFvSgAzM925TIArABwrAXcAmF7C2qF1dwBYEeBW0HKfBLzzuH5KFd7/4S9LgI9FAvwCwMES8AiA6XPFzuFHNABYEeDGZ8UqmIAHlelJ8De875K8t2M8MjkEBsBFJuAKANNLOIgyqHEIDIBpANc+/VIwAQ/CjSvfMZVMZL7baVMkwE8AHCsBzwCYMV8PUvO+2iEwAKYVYrp7lFQyAfdu42qQ+ss8gLmmnEsE+BsAx0rAVwDMKKHcjZ+EzwSA9QBevLq5OAF8Fxr0CivuSaqsvFDK3VU9lgjwAwDHSsA3AMyYr8VLJnv5AJgMcO9SUsEE3PgN+KVleHt6znw/JPOytwAYALsn4A4A00vYuvyGFgDrAex0ZCOXgBu/Ab+0Y77fPODJdWBedokAnwBwrAQMgBnztdN2Xw+AtQBuxST3SsC19CxC+IhNjGdLgKMdApsAfADAsRLwHgDTS9j4zNYDANYCeDGEFy+A70IjS2NUD1LDgXcsy91W/SoQ4BEAx0rAIwCmTxW1z2w9AWAtgGunBatcAp4k+4VOx9QCmHtn76ZAgCsAHCsBVwCYXkKxu060rh8AawFceQH87i8PGpOTbB3e90leJmU/21oewC8AHCsBzwCYMV/vpCsmPlsDYBrAk9D3+CXgha170RjVjVQn4r0Kix3rjsUB/ATAsRLwFQAzSjjZqcXt+QBYBeCbG8B3mdb98ZfC51NqSDOfDOJOFVsADIB9EzAA5jSL13lbD4CVAF56f1vnBvAsVkq/z9shzTyVPXApKQ7gbwAcKwHfADCjWQan1c0AgJUA7p06pVgCbtcA8F4J4BO3+Y+lAfwAwLES8AUAM+ZrrxteJgCsBLDXLRNiCbhZA8Dv9w94dLFz3bY0gE8AOFYCBsCcEnrd8LIDwDoAt0KO+yXgTADmvRuDfbLZlgbwAQDHSsAdAGZMtL1T49YA2Bfgmx/As1jX8Pu8X5Ey94TZ7X8sDOARAMdKwACYU0LpFZNCXgLAFIDdXqQsloDLBpg9V2wLA7gCwLES8B4AM+Zrr1/QAmCdgtbxl1Sz2MCKPDMyHwRm76y2ZQH8AsDBEjAAZpSwBcCFAjz6AXwvAmBmIn3ksAdtAPATACMBrz8Bt5IGkj4AWAfgnVdFxRLwtAaA39/DxnwOiQ/LtiiAvwFwsAQ8AmC1BKwAcA+AVQCe4gP8pgJD0QDzt1bbogB+AOBgCRgAM2aKRmq6IX8GAOwJ8NUR4DkDgGc1D/kVOJYE8AkAB0vAFQCmlxAA5wbwwna9IAErA8x8EDjh+dZNSQAfAHCwBAyA9RKwwms+JwDsCXAXNwH3mQB8tMMrjfxVAjwCYCTgYhIwAF4NwH18gO8ZAHxXAzjh7qKvggCuADAS8PoT8MLvuXg2HwBWAHjvCPBcBsDMB4ETnq/ZlAPwCwAjAWeQgAFwoQCPjgDfpSoZG2DuY0EJNTgWA/ATACMBl5OA5TcsCb8AAFMAdhstYgl4HQC/H9PcPHrg12BbDMDfADhYAp4BsF4CBsCZATx7AnwvA+DWUC/mQep6AX4AYCRgJGAAHA3gdgUAz+ueFBePaaZeKeHuqxSADwAYCRgJOMKOJQBmDJirZ0HvOQC8lyZF5P6iFgADYCTg7BLwHgCvBOBmBQDPhQDMvSUqpQrHQgCuADAScDkJWAFgbEF7AnzzBLiUBMx8Dikp3W3KAPgFgJGAcQaMBAyAxQvaZAMw957kx+ojsDrATwCMBIwEDIDXCvAlbgLOB2BuGk3SZVMEwN8AGAkYZ8AAGAAjAf//yYvJV9r+6rkEgE8AGAm4oASMLei1ALyGgpaSgLnPIaXd4rstAeADAEYCRgIGwAAYCVj+PDYt350LAHgEwEjASMAAGAAjAcsDnHbCuS0A4AoAIwEXlIABMABGAiYX9sPlEDhABNYG+AWAkYCRgAEwAEYC1siiaRPGNnuAnwAYCRgJGACvFuDAh/oZAcx+JOiw8gisDfADACMBZ5GA1//UCgBGAo4KMPs26ERgtrkDfALASMBZJGAADICDFbTNCGBuFE3dYj1mDvABACMBl5SAbwAYW9BGCTgngNkQJtZikznAFQBGAi4pAQNgJGAkYHphP5wOgb0jsDLALwCMBJxHAl7Dfx8LgFcBcC1UgZwA3jodAntHYGWAnwAYCTiPBNy6rW4AMBJw9gCzHUwm5itngB8AGAm4qAQMgAGwVQKu1gHwsjHNJix5yjhnDPAJACMB55GAK7fGBcCeh/oXT4DnHADe6zKYegjs+yiSMsAHAIwEnEcCrtx+AQD2TMCuABeUgNk3Q6X/h7fHfAGuADAScCYJuBcuGABeRQK+eY6HWapx4wPMvg06/UbfTbYAvwAwEnAuCRgAA2CZzyRVgZwA3vodAntuQusC/PQAWHLPCAkYCfi/n8Hrph0A7Anw1RPgLBKwdgw9pVfkmCnADwCMBJxLAh7sux8AzhLgQaoCQ0YA82+DFoh5m0wBPgBgJODCEvAVAK8DYL/nygapgmYF8NHvENhxE1oX4BEAIwHnkoAnAAyART69VAWyApj/QgyJnHfMEuAKACMB55KAd14Tth/AIwDWGC29VEGnNfi7dEBsPQ+Bq/acIcBPAIwEnE0Crr1+AgDWWVG5dUmx9LjLCeCN5yGw2zGwKsDfABgJOJsEXEtXDACvAmDxerZieGUFMP8uLJmjzn/zA/gEgJGAs0nASx3sAPA6AO7DL6jerZXrNQB8FXdFCZpjdgAfADAScDYJuFHpCQA4OsCdX498V9C8AD767kH7/K8MqgBXABgJOJsE3EpPOPEB3luOIHOAB/v5hLxxLJel4wPMfhml1BsXN+e8AH4CYCTgfBJw5dW8ANgVYPEFFeHe5TkDgBfPjAm3QQnttW7yAvgbACMB55OAFxdtBMAAOP3vLljMtVkB3PIZk6Lmn6wAPgFgJOCMEvDSibMDwJxeaQ7w5DRclg/+twVd+DU/fvz49evT6Z+9OCyK/+vPvzkBfADASMAZJeBBpStEBrjLGuCdT58kxdb/sHcGv3HbShzWrhL7unYAndcOoPMmaZVrDi18NdAGvEZrQOcAecb++6/vvbR5ae0sh/wNZ0j9iDZHryRS/OYbDinMPLLvqmh35jno8gTWBLDRqKUB04BVDHgC/Z01AXjrGMBGG7slC7czZh751FXRLsty7On2azMARtZg0YBpwOYGfGEU4NgB+FNJ2rgF8M5qQJ4fSlbL2DotowYKCJufWwEwsgaLBkwDNjfgzeJdmWbTQZ1Jm+IANtrYLSiCPtuhk9OQO3GSzwAZcOL4uREA30P7hgZMAzY24K3FCCSAzQEM9kdJEfQCerPqAHDOSRifgZfxUxsA/kAA04BbMuB+sZmx0QAelnI3cuEYwL3N+yIogj7boWbnk+u0Oxc56KIEVgQwNjtBA6YBGxtwZxTh2Blw/kiZHAO4MxmUsr27oKHxqauiXfrIQZc8E0sPwNCQhAZMAzY34PhewwqHnQHnA3j0DODYB7GzGY8RHWCURddqLwqT7Aez6V31AP6CfSA0YBqwtQGPi4lw2AE4P1QbWgAwtDslNVjnO8DrK5/YTk5y0F2xUiw9AIMjEhowDdjagCebEMcQwNkq7xrAI2pgKOUEIjp0MHuvVNqdlxx0sTS0HoCxz4MGTAM2N+CNzW3UDODFM4Ani4hVJMBnfzkW57uuivY+A2Wf4Vfza80AfsQ+CxowDdjcgONJCJ3vDAG8K3bpFgC+KBaHpD2RiA4dVaYns/bSUQ66jASrARj8OGjANGBzA+5xLLcE8Kg1qnMevgWANwZTyoUIwAvqz1WyCJz1PcAPChf0U6gVwOCEAA2YBmxuwJ3NfRgC+Fjs4VsAeGsQT4mWgM936MbuxVJpoTDLzrdfQp0ABocjNGAasLkBC7oNmYM2BHDuUJlcA7g3eGNkArzAxsauq6LlVGE9Kl2TqgWrARj8EGjANGB7Ax4XA2eyBHDuUBldA7jDv4W4vozr0F5nfjJrl95y0P/LjOtpsBaA0SviNGAasL0B29wIGsAaWgrwPQMAD8XnlEkG4AU2k6xhEfiL4oW9++VjVQBGPwsaMA3Y3oAFS5rAlJ8lgHel3loTAI+4oQF/8SM7dCwUSpVqJ4c56G8Q/uXXjx/D4wn4nxaA78H3TgOmAdsbcL9YPGQ0gCWFuA+FrtwGwFPpcSk7CDomVp4spkXFdndyV4blrsUAGD2R0oBpwPYGrHGuhG8AH0t1vAmA469vV3owxnboRZmeLNZyjuLQ2ApcKYDhyQAaMA3Y3oAlGURc1QsawBuogkHyo0YA3iyF8TUKAbwAB8ehCrhkLQKf6rjHAgCGL4fTgGnADgxYsnwKuxVTAGeJ/OAcwNvCvSnOQM/AP7mrAi79iTloAIDhD4IGTAN2YMASdr3yCmDRyuyuzEtrA+BuKYsvaQY6JlYuLfEO6GJXhlXNI/pAANOAGzTgLdReagDwQ5FHbwXgoSy+xBnoGfk368jPZi0C620FrgvA+ECEBkwDdmDAIqdD5fzQAO6XQmHE5B7AY9GRKc5Ax8TKU/HxqNteZgH4dwJYpxqNBkwDdmDAolVNVKCDBrDsOMSMHhncA3gqGk5NYv7Opce3fctbBD51K2jBYC2cBkwDdmDAsjkUpBxwAA9lbkIofBYA3hQNpwYxgBfk6KjkLI68Ux8/E8AqmXgaMA3YgwFvwP7iH8DHAk/eDMAa3ytGPY/YDjUoC/w64+jMFnmLwGsowwoGD4EGTAP2YMCyw/QxCgwH8AiWMMjPmABYIunZG7tHOYAX6FwCfvEHHaPOWwReQxlWMDiQhAZMA/ZgwLL10xlyO8YA3uu/PGYAFiUDDsWmMFGHTqUDwm/9cNCYLTIXgVdwGlYw2A5NA6YBezBgIbwgx2HBATwVuYdNDQCWdGdmBndKAPCCfc7QMqxRq6wr89N/h671FgyyADRgGrALA550qFIUwBdwC0MAxwTAFwUeRLoAR/2kZFUE+HptYQHm31veIrDqRwnrALDGOjgNmAbswoCFXndETXXInt2UCCLEwDEBsOhRZGVwkwR4wU5SSGCO+KT215a5CNx+GVYwyMLTgGnALgxYyhXADAUHsKySLHHW3lQB4GKHkvRDCn+jflGSRoe9X1tgiufvj8rgG/dNAVjjAdCAacAuDFi8mfMAm+tgPduXuIWxCgB3paKpN0kCHBUrS9wathNphNYZft/uqMBZAFboEhowDdiHAYtTiflJaDiApfXJO90X1hTAojghPXRNE+C4H9wUuYPnxuQ1fr7IXARufidSMAhAaMA0YB8GLE6tvsJNdqieHRQwkBmnWAF4Ug9FEh9HfKxscUD5qCDVf7UXJ+5EygCwShUaDZgG7MOA9dSuHIBH9TtIMD4bAMviqdSEa5/I3xk8m6Be/i260v/7dqICZwD4ngCmAbdrwN1QmsB4AOun0ROOXbQBsBCNiWXEYyKAF3x3QoR1REQlz7fMReDWdyIFg+9R0IBpwD4MOOWbNnl3hQewGI/iGxhqAbD0Sve6PZjUoZuCg/GpH4Sfx3GZq8CHruUWDBLwNGAasBMDTpC7Y9ZtOQDwg9pDNwewUE6TYDOkAnhBT44LZC/woFVb/bXlLgI3rsDB4HtQNGAasBMDTlnPyyIwHsDyWzjoE8cIwBfCy0yAzZTMX43PW+W/Y2/gZQ7CJOvKFTgYLIDTgGnATgw4aUEvh8B4AHfi639Qeub2AN4qxyIZCejoWFlG+NyM8VYnr/3/LXcjkpIG1gBgpV3QNGAasBMDThOajClKAcC6hWRpm16NACwORqTxa+IWYMlvCQOeXd4bNSpA/W/tZS6AT13DLRjswaIB04C9GHCa0czJaToFAMslXjLDpqVcrQAsfhav8nkFjpX7YsFg99yZXtjPMvQnKnAigO8JYBpw2wacWlOTemaQAoAv5Fe/U7heFwCeFB9Fl3wGpaxDB71oKrZ3d9C3NncjUtPnUQaD1W8aMA3YiwEnO02iBCsAOGGRNl6bhroAvFXtx5wF4PhYeVJ61oLenffIt/aSCpwGYK1TwGjANGA3BrxJnk+vU+5PAcApWIh9PKnKZwXgTjMY2Q5Z/J21+jP5PZvKxPXZG5FaVuBgEHfQgGnAbgy4z5hSExCsAOAu5dJ3OiwwB/CoR+A+j7/RsXKvFU1JoqtjKcisXYGDwSmcNGAasBsDzqurmW/f2QNYrU45HTlmAE5YEI/cVpbNX72qurSiqS2yOu2HLXsjUsOF0MHA+2nA6zDg2+vrmxvxP7dlDTgjB/21XV3d3Ea0/9zfH02hZ5MKlSO8LwM5ZgDeKj2LfP7Gx8ryEZlCy3M3tMfNGfk56HaPwwoG90wDXocB40VBw4D7xWeblUOI808oIzdgBuBu0SHwdijXob3e8xYEFMDzOPI3Ip0eD+sD8D0BTAOuFcCCLhxrB3DiSu1R8bnYATjtqufXP/6rbxE9qrmmsEfzF7oMfEcFTgBwRwDTgNs34LzNnR4A3C0KBO6z4hI7AKeuKPxwY/dN2Q5NeMeEG4eiEuq4ZeD8w7Ca/S5wKL4JiQZMA3ZlwH31AE5Nj/6g+ihzydMOwMm9+TzCAOlnWay81XzkgjuCLQMDctCn39cG4HsCmAa8BgN2moMWAHhK/o3nCPw2kzl2AM74XODTu8r6m/IdmnQPr6P//Nvc4WGRg25UgYPBR6BowDRgRwacXwdtDeCMG3itk3I1BPCUcdn/RPD2Btej2hFVbMr4Bv/Qz7VLAID/tS4AK94uDZgG7MmA+9oBnHMDxz1cf20BnHde5Hcbu9/dDjYdmlpWFxPhixLqqM8yADYiaeZkPQL4MwFMA16HAfvMQc8qQ/Ap7fvOgnsIdAwB3GVf/9X19e3tzc0Vukf1O3Q+m4aWJtT32pxZ+4GUwSDjTgOmAXsyYJ856LlcBDFfv/5vbNi/uwVRxxLA0+KzzSXesjOno8oT6qCVyPcIBf5tRQDWjDZowDRgVwacL03G8zUigpiRF28J4I1TAEti5Yw8+vMITionA00wkBy0Yl2SOwB/IYBpwGsxYJfSNJeZr3WaJYA7p/yddSaVc2sKfy0tJCY3jrqgWXsdVjCo+aYB04B9GfB2zfN1cwAenRK43KrIn2sKX2eTd7c3GQMEcx4HJAfd4FakYLDeTQOmAfsyYI9z9lzz9ZsC2GkOelaaI59rV1dX13/8f1WsMwvkoB/XAuAvBDANeD0G7HHOnmu+flMAe81B1xoSYs7jgOSg26vDCgaqTwOmATszYMDH5kwBvCWAnS/pS2NlTyEVZBkYk4Nurg4rGJg+DZgG7MyAHc7Zs9IgXAGAneagu2p7FLEMjMlBN1eHFQy+/UQDpgE7M2CHp2HNNQcQtgB2ua1MGit76tEHPdSs/TysYFBsRgOmAXszYH9lWPVmLO0B7DMHLRuQ2woSZiiGAAATF0lEQVS7s0QO+vHQPoCVa81owDRgbwbsbyfSrDW6VwBgj9vKxLGyn5AQsxUYlINuLAkdymegacA0YH8G7C5tOdc6XTsAsM8ctHBA+klq7DSzrSvfDBwM7pAGTAN2Z8DuKnfmmi/fGsAey7DEsfJQ64Xr5qDbSkIHg93ONGAasD8D9mZNs9pLtQIAu/zCpHRAelnJBgkwLAfdVBI6lP0SIQ2YBuzUgLs3XDJsBsDVH23mKYo4aMJm7ZXQwSDHTgOmATs0YGeHccw1xw/mAPZYhiUekT4U+AE2d1yiANzQcRzB4LxNGjAN2KEBO1PgWe+tWgGAHZZhyWNlH1EEDnawHHRDSehg4Pc0YBqwQwN2psDV1uz4ALDDMiz5iPSQSH8ATh53MAL/1jCADwQwDXiNBuxLgcUA3hDAXhMCqbGyBwVG4uAlDMDN7EUKBnZPA6YBezRgXwpcbc2ODwA7PA0rYUTaD8gjdObHAbiVvUjBoMKMBkwDdmnArhRYHlqNBLC7BdTMWNk+q4HlHC4H3coy8D8B3BHANOB1GrCrddS5wtnaE4D97USqcUAesbMHMAfdyDJwMAgsaMA0YJ8G7Ilhs+Z7tQYAe1PgucYBiU70AgHcxjJwMLgrGjAN2KkBO1LghJ6dCGCn6Yz0WNn2Jh7Q08d7IIAfPzQI4MeOAKYBr9aAHWnTXPPFuwCws51IabGy7U2gBRi4FbiRZeBQ9kNINGAasGsD9rNymNKzAwHsWIHry8k86ANn7QQOBnl1GjAN2KsB+1lIrbNo1hWAfSlwYqxseBPzAT9/IMuwWijECgYhBQ2YBuzWgN1sRZpdRg9zTQAuZY+RP1NdTuaVxuQPBXD9n2UIBvdDA6YBuzVgN4nLpNBq0r6q26oAXMgeL/Q61HJlXye4v8MS+ENbAO4IYBrwug3YSynT7PHa521VAC4TTD1EvhO1lSXsVCaQF1gA114KHYqXYNGAacCuDdjJbp7Z42S9qwzARRT4oGvAVmUJxyLIWfuZlMHA52nANGDHBuzkSOi0nt0qX1NlAC6hwMfYd6KysgQtsF2eSOBnAPzYEcA04NUbcPe2XgDrEmdXHYALrCfsI9+J9FjZJCJ8pTb9gwFc92akYFBSRgOmAXs2YB+bgR3uWpm76gCs35XH6HcifTxuqhl+Me2OBH4GwAcCmAZMA+5cVELP/i59VyGA1RV4H/tO5CCtfES415tCXpxI4CcB/KUjgGnANODORSV0as9uVK+oOgBrl9Qd49+JMlMmpj2Ugs7aCRwMtlTRgGnAzg3YwXEcyaGVmgLvqgSwMrv20e/EXNF41DgD61t7fyKBnwDwY0cA04BpwE6WgZN7dqN5QfUBWHcB9Sh4JypaFNnrAuBEAj8B4HsCmAZMA/6zC4ZaAaw1V+8qBbAqu/bx70RerFx0UeSoPIncaRD4UDmAiwnwv9m7m542rgUMwBNs9nxIrG0ide0CVbaWMGKLFJDXdv5ApdTy329CaZXcwMVjn885z9Omy5Lx8cw775kzBw1YAy6/AWd/DLz/yH6I+PepMYAjjuSXPudENQ9FVrGzbBwhgCt9H3iZfAmWBqwBV9CAs/8unQNuraJMn0+qDeCI67BmPc6JQ++V0z0UmSSMndZ3pVxm2NVaA9aAy2/AuRdiHTCyMSrfuqs3gKNNQp/3OidqmZI5j38VOd5K4P8J4IQPsTVgDbiCBpx5IdYht1YRKt+k5gA+ijtEaRpwqimZdYrLyDaO23oDeC6ANWANuJwEXqU5w3p+nnUGcKSBPOl3TtTxdYz+APjZp0gJ/FhrAG86AawBa8CJ5i5j31p9iHVVrjSAowzkut85sarj6zhJkwHbWAk8qzOAHwSwBqwB/zIQF3UGcOhL9UlXeQDHmISe9Twnkl45C34A/Ow+VgJX9iD43wDuBLAGrAEXlMAlvTa67moP4Agr6k56nhMh7pWjL8T6kuo6Mt5Gc1thAH8VwBqwBlxSAq/KCZwfHgtWG8DBH6Cue58TIb6OkVfmr9NdSO7jJXBNe3Isk/4eJA1YA66rAedL4ENvrQL+tU+6AQRw6HGc9T0nwtwrR12ItUqYA8fxAni7ua0sgNNupKkBa8DVNOAu11roQ0c23Gzll24IARx4+vak/zkR5tt4MYz8jbQZR3VrsZap30HSgDXgqhrwN9MaAzjYbOVPl+WKAzjo0vB1/3Mi0L1yvBmZtPkbtQLXU4KXGX6ThAasAdfUgPPsiXX4yAZq7pNuIAEccBhX+5wThT8TWU0Sx0DUClzLk+Bl+gKsAWvAdTXgrru6qDCAw1ypz7vBBHC4hwmzPc6JYPfKR3G+jJPUl5JP28geKwngTSeANWANOM/EX8SRDfHUc90NKIBDPUCd7HVOBPsyHg0if+NtxlHTPPQy8SYcGrAGXGEDzjANHeLW6kPo/K09gGNMCiRvwDESeDXJED7RK3AFEbxMX4A1YA24ugYcb+Yv6sgeetfwy7qcygM4SAKv9zwnQn4Xh5C/CSpw+RG8TF+ANWANuMIGnLoEl/Da6K/X5doDOEACr/c8J4LeK4e9G0y8/vk/99skEbyYdcVapi/AGrAGXGMD/j4u09oC+LAEnuxbvcoN4IOj65WwSt+AwybwOldAjbeJPBZbg5fbPwWwBqwB73rdm1YWwIc0vsnec58FB/CBHfi1spihAYdcFniWL37uUyVwsTV4mb4Aa8AacKUNOGULXmW/UE/2f/hYcgAfFF2vTtbmaMBdsJeqzjPGT7IK/E8GF9iDl1/T/0wNWAOutQE/j87lRUUBvHfevPptHUIAd6PfguZvngbchVmTkGf5VYYK/DIXvbguLIAzFHMNWAOutwG/ZPBpNQG8XwK/cWEeRADvvbnoGw9LMzXgEPvDnGWemB1v03taLG6LmY/+nOFnasAacM0N+GWMri5PL6oI4H0a31vFaCABvF95PDvonIhxr3x04DT0x+wBdJ8hgbeb73+enu7uFotF5j857gRGlzsLOT+y+0/9GOn/O4vwCaUevKPLfVz9X9c/CfLDE11ZRtdXV70+iGmOAO7f+N5cFzuaTi/Pzt77z3QW/IseekD3WEV8fuDXMso38PeK62+uClyQrx1kN/rhn2E7yhPA3VUt62LTfed63pSsPhZ6HPtOwxRyQPdNB7BrPzQQwH0aX6lRE1qvJ6jZ3pUNfBxF1d/mK/BnV0RoIYB3b3wFR022Erw6H8ZxFBe/bVfgjQsitBHAOzalVupvr3mBguIqSAQXdTwNV+A/XRChlQDuut/fy5vVWWsDssNdSRX3JD3afGm3E/cKMDD8AP52mb6o6dKcJoKnw5gS2G1/mNPyDmfUagA/uB5CSwH8zZuX6dOPrQ7K27clld2SHE0v3knfIg/nkwIMNBHAXXf9ymX6dPeX1Afp+pWtzVZnH4dxIC8jXOzRjBRgoJEA7n7axmt1enp5bWCes+vy9J9P5eLbZ1JmWex5IM/J+/1gyh7h4xbz9y9nHLQZwP+aGZGf7ksGdjy1DO9o2WAAz51v0HYAgwqsAIMAFsC0aqkAAwIY0hsrwIAAhgxa241jZshBAIMK7LcwgAAWwKjA9uAABDAk09RuHA/GGwQwlKKhV5GswAIBDAVp51WkucEGAQzlaGYd1ldjDQIYStLIOqzNzFCDAIaSNLIO68FIgwCGsvxhBRYggCGDFtZhzQ0zCGAoTQPrsKzAAgEMBRr8Oix7YIEAhhKNliagAQEM6Q18PywrsEAAQ6GGPQk9M8AggKFMg34Z+MH4ggCGUh2bgAYEMGQw2EnozdzgggCGco1NQAMCGDI4NgENCGDIYJiT0DMDCwIYyjYyAQ0IYMjg2AQ0IIAhg8FNQm9mBhUEMJRvcHtCz40pCGCowcDeRXo0oiCAoQ53fgkhIIAhvdG9CWhAAEN6A5qE/mw0QQBDPQbzLpI3kEAAQ1UGMgntDSQQwCCBPQAGASyA4T2DeAz8YBxBAIME9gYwCGABDO+r/m1gbwCDAIYq1f4YeGYIQQBDjSrfFHpuBEEAQ52qfgxsBw4QwCCB7cABAlgAQw9/yF9AAEMGlS7EsgMWCGCQwBnyd27gQABD3apcCi1/QQBD9cb1JbAF0CCAYQgJLH8BAQwS2A7QIIChEVW9jOQFJBDAIIHlLyCAoYUElr8ggGFQKvndhDbgAAEMElj+AgIYWkhg+QsCGCSw/AUEMLSQwPIXBDBIYPkLCGBoIYHlLwhgkMAZ3v+VvyCAYcgK3ZHD/hsggGHgbvz+BUAAQwZj+QsIYMiRwMvC8vfWmIAAhhaMykrguREBAQyNuC/o9SP5CwIY2lHM60he/wUBDE25sfwKEMCQQRFLsT4bBxDA0JrRvce/gACGDDLvimX3SRDA0Kis09Ae/4IAhmaN7kw/AwIYMrhRfwEBDBmMM6zF2th8EgQwsEhef2c+dBDAQOISrP6CAAZe3CzVX0AAQwaJlkP/NfdRgwAGfpBiHtrsMwhg4BfR56EXPmMQwMArFksPfwEBDEOKYPELAhhIHsHiFwQwkDyCF+IXBDCwg5uALyVtLL0CAQzsahSoBj968QgEMJC4Bm/MPYMABvawuJO+gACGDEb7ZfCT9AUBDBxovHjqVX099wUBDARys7hb7tR8b1VfEMBAWNeLxdMbZXjz9Ch7QQALYIhodH1zs/jB7e215IXhB/DZ6XS3fy99WAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPA3e3AgAAAAAADk/9oIqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqirswYEAAAAAAJD/ayOoqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqrQHhwQAAAAAgv6/9oMZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB4AkLnYov9qhU2AAAAAElFTkSuQmCC">
+        <span class="header-divider" aria-hidden="true"></span>
+        <div class="header-copy">
+          <div class="dashboard-title">HSE Performance</div>
+          <div class="eyebrow">Industrial Management System · Saudi Arabia · <span id="yearText">2026</span></div>
+        </div>
+      </div>
+      <nav class="header-nav" aria-label="Dashboard sections">
+        <button type="button" class="is-active" data-dashboard-section="Overview" aria-current="page">Overview</button>
+        <button type="button" data-dashboard-section="Safety & process events">Events</button>
+        <button type="button" data-dashboard-section="Performance analytics">Analytics</button>
+        <button type="button" data-dashboard-section="Site overview">Sites</button>
+        <button type="button" data-dashboard-section="KPI ownership">Ownership</button>
+        <button type="button" data-dashboard-section="KPI explorer">Explorer</button>
+      </nav>
+      <div class="header-right">
+        <div id="syncPill" class="sync-pill"><span class="sync-dot"></span><span id="syncText">Live</span></div>
+        <select id="sectionJump" class="control header-nav-select" aria-label="Dashboard sections">
+          <option value="Overview">Overview</option>
+          <option value="Safety & process events">Events</option>
+          <option value="Performance analytics">Analytics</option>
+          <option value="Site overview">Sites</option>
+          <option value="KPI ownership">Ownership</option>
+          <option value="KPI explorer">Explorer</option>
+        </select>
+        <button id="testEmailBtn" class="text-btn" title="Send test email" aria-label="Send test email">Test</button>
+        <button id="visitLogBtn" class="text-btn" hidden title="Private visitor history" aria-label="Private visitor history">Visits</button>
+        <button id="emailDirectoryBtn" class="text-btn" title="Manage KPI emails" aria-label="Manage KPI emails">Directory</button>
+        <button id="kpiChecklistBtn" class="text-btn" title="Select monitored KPIs" aria-label="Select monitored KPIs">Checklist</button>
+        <button id="cardSelectorBtn" class="text-btn" title="Choose executive cards" aria-label="Choose executive cards">Cards</button>
+        <button id="themeBtn" class="text-btn" title="Toggle theme">Dark</button>
+      </div>
+    </header>
+
+    <section class="filterbar glass">
+      <select id="siteFilter" class="control"><option value="ALL">All sites</option></select>
+      <select id="periodFilter" class="control"><option value="YTD">Year to date</option></select>
+      <select id="categoryFilter" class="control">
+        <option value="ALL">All KPI categories</option>
+        <option>Workforce</option>
+        <option>Safety Events</option>
+        <option>Leading Indicators</option>
+        <option>Emergency & Preparedness</option>
+        <option>Risk & Assurance</option>
+        <option>Environment</option>
+        <option>Other</option>
+      </select>
+      <input id="searchFilter" class="control" type="search" placeholder="Search KPI, owner, procedure…">
+      <button id="refreshBtn" class="refresh-btn">Refresh live data</button>
+    </section>
+
+    <div id="notice" class="notice"></div>
+
+    <section id="overview" class="executive-hero">
+      <div class="hero-copy">
+        <div id="heroKicker" class="hero-kicker">Last completed month</div>
+        <h1 id="heroTitle" class="hero-title">Checking required KPI completeness…</h1>
+        <p id="heroDescription" class="hero-description">Loading last-month missing KPIs from the reminder checklist and live source tabs.</p>
+        <div id="heroActions" class="hero-actions"></div>
+        <div id="snapshotSub" class="hero-meta">All sites · Year to date</div>
+      </div>
+      <div id="heroRing" class="hero-ring" aria-label="Year-to-date completeness">
+        <div class="hero-ring-inner">
+          <div id="heroBsvPct" class="hero-ring-value">—</div>
+          <div id="heroRingLabel" class="hero-ring-label">YTD completeness</div>
+          <div id="heroBsvDetail" class="hero-ring-detail">Required KPIs</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="completenessPanel" class="completeness glass">
+      <div class="completeness-head">
+        <div>
+          <div class="section-title">Site completeness</div>
+          <div id="completenessSub" class="section-sub">Required KPIs checked for reminders, January through last completed month.</div>
+        </div>
+      </div>
+      <div id="siteChips" class="site-chips"></div>
+      <div id="missingKpiWrap"></div>
+    </section>
+
+    <section class="section executive-section">
+      <div id="summaryCards" class="cards-grid"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Safety & process events</div>
+          <div class="section-sub">Counts are taken directly from the selected reporting period.</div>
+        </div>
+      </div>
+      <div id="eventCards" class="event-grid"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Performance analytics</div>
+          <div class="section-sub">All-site and site-level comparison from the same live KPI tabs.</div>
+        </div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card glass">
+          <div class="chart-head">
+            <div><div class="chart-title">BSV by site</div><div class="chart-sub">Actual versus annual target</div></div>
+          </div>
+          <div class="chart-wrap"><canvas id="bsvChart"></canvas><div class="chart-fallback">Chart library unavailable. KPI cards and tables remain live.</div></div>
+        </div>
+        <div class="chart-card glass">
+          <div class="chart-head">
+            <div><div class="chart-title">Workforce exposure</div><div class="chart-sub">ALAR employee and contractor working hours</div></div>
+          </div>
+          <div class="chart-wrap"><canvas id="hoursChart"></canvas><div class="chart-fallback">Chart library unavailable. KPI cards and tables remain live.</div></div>
+        </div>
+        <div class="chart-card glass">
+          <div class="chart-head">
+            <div><div class="chart-title">Monthly trend</div><div class="chart-sub">Choose a leading or assurance metric</div></div>
+            <select id="trendSelect" class="control chart-select">
+              <option value="bsv">BSV</option>
+              <option value="unsafe">Unsafe circumstances</option>
+              <option value="walkthrough">HSE walkthroughs</option>
+              <option value="near_miss">Near misses</option>
+              <option value="emergency_drill">Emergency drills</option>
+              <option value="lsr_breach">LSR breaches</option>
+              <option value="total_hours">Total working hours</option>
+              <option value="rca_actions">RCA action closure</option>
+            </select>
+          </div>
+          <div class="chart-wrap"><canvas id="trendChart"></canvas><div class="chart-fallback">Chart library unavailable. KPI cards and tables remain live.</div></div>
+        </div>
+        <div class="chart-card glass">
+          <div class="chart-head">
+            <div><div class="chart-title">Event profile</div><div class="chart-sub">Selected site and period</div></div>
+          </div>
+          <div class="chart-wrap"><canvas id="eventsChart"></canvas><div class="chart-fallback">Chart library unavailable. KPI cards and tables remain live.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Site overview</div>
+          <div class="section-sub">BSV, workforce, leading indicators and event visibility in one view.</div>
+        </div>
+      </div>
+      <div class="table-card glass"><div class="table-scroll"><table>
+        <thead><tr>
+          <th>Site</th><th>Latest data</th><th>Working hours</th><th>BSV</th><th>Unsafe</th><th>Walkthroughs</th><th>Drills</th><th>LSR</th><th>Safety events</th>
+        </tr></thead>
+        <tbody id="siteTableBody"></tbody>
+      </table></div></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">KPI ownership</div>
+          <div class="section-sub">Top responsible employees based on KPI assignments in the source sheets.</div>
+        </div>
+      </div>
+      <div id="ownersGrid" class="owners-grid"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">KPI explorer</div>
+          <div id="kpiCount" class="section-sub">0 metrics</div>
+        </div>
+      </div>
+      <div class="table-card glass"><div class="table-scroll"><table>
+        <thead><tr>
+          <th>Site</th><th>KPI</th><th>Category</th><th>Owner</th><th>Target</th><th>Actual</th><th>Latest</th><th>Status</th>
+        </tr></thead>
+        <tbody id="kpiTableBody"></tbody>
+      </table></div></div>
+    </section>
+  </main>
+
+  <div id="metricModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-head">
+        <div><div id="modalSite" class="eyebrow"></div><div id="modalTitle" class="modal-title"></div></div>
+        <button id="modalClose" class="icon-btn" aria-label="Close">×</button>
+      </div>
+      <div id="modalStats" class="modal-grid"></div>
+      <div id="modalObjective" class="modal-objective"></div>
+      <div class="modal-chart"><canvas id="modalChart"></canvas></div>
+    </div>
+  </div>
+
+  <div id="testEmailModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="testEmailTitle">
+    <div class="modal test-modal">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow">Email notification check</div>
+          <div id="testEmailTitle" class="modal-title">Send a test email</div>
+        </div>
+        <button id="testEmailClose" class="icon-btn" aria-label="Close">×</button>
+      </div>
+      <div class="test-email-copy">
+        This sends one harmless test message only. It does not report a KPI gap or change any spreadsheet data.
+        For security, the recipient must be the signed-in user or an active address saved in the dashboard Email Directory.
+      </div>
+      <div class="test-email-form">
+        <input id="testEmailInput" class="control" type="email" inputmode="email" autocomplete="email" list="emailDirectoryOptions" placeholder="name@airliquide.com" aria-label="Test email recipient">
+        <datalist id="emailDirectoryOptions"></datalist>
+        <button id="testEmailSend" class="refresh-btn test-send-btn">Send test</button>
+      </div>
+      <div id="testEmailStatus" class="test-email-status" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div id="visitLogModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="visitLogTitle">
+    <div class="modal visit-modal">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow">Private to Hussam</div>
+          <div id="visitLogTitle" class="modal-title">Dashboard visitors</div>
+        </div>
+        <button id="visitLogClose" class="icon-btn" aria-label="Close">×</button>
+      </div>
+      <div class="visit-copy">
+        Each signed-in page load is recorded once. Auto-refresh does not add extra visits.
+        Unsigned sessions appear as “(not signed in)” if the web app is not deployed as
+        <strong>User accessing the web app</strong>.
+      </div>
+      <div class="visit-stats">
+        <div class="modal-stat"><div class="l">People</div><div id="visitUnique" class="v">—</div></div>
+        <div class="modal-stat"><div class="l">Total visits</div><div id="visitTotal" class="v">—</div></div>
+        <div class="modal-stat"><div class="l">Time zone</div><div id="visitTimezone" class="v">—</div></div>
+      </div>
+      <div class="visit-toolbar">
+        <button id="visitLogRefresh" class="secondary-btn" type="button">Refresh list</button>
+      </div>
+      <div id="visitLogRows" class="visit-table-wrap"><div class="visit-empty">Loading visitor history…</div></div>
+      <div id="visitLogStatus" class="visit-status" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div id="emailDirectoryModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="emailDirectoryTitle">
+    <div class="modal directory-modal">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow">Reminder administration</div>
+          <div id="emailDirectoryTitle" class="modal-title">KPI employee email directory</div>
+        </div>
+        <button id="emailDirectoryClose" class="icon-btn" aria-label="Close">×</button>
+      </div>
+      <div class="directory-copy">
+        Owners are listed automatically from the KPI Responsible column in every site sheet. Enter the email beside each owner.
+        Active owners receive their own consolidated reminders; CC selections receive copies of all daily reminders.
+        Owners with a blank email remain inactive. Data is stored in the Google Sheet, not in the application code.
+      </div>
+      <div class="directory-toolbar">
+        <button id="directoryAdd" class="secondary-btn">+ Add employee</button>
+        <button id="directorySave" class="refresh-btn directory-save">Save directory</button>
+      </div>
+      <div class="directory-grid">
+        <div class="directory-grid-head"><span>Site(s)</span><span>Employee / owner</span><span>Email address</span><span>Active</span><span>CC all</span><span></span></div>
+        <div id="directoryRows" class="directory-rows"><div class="directory-empty">Loading email directory…</div></div>
+      </div>
+      <div id="directoryStatus" class="directory-status" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div id="kpiChecklistModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="kpiChecklistTitle">
+    <div class="modal checklist-modal">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow">Daily reminder control</div>
+          <div id="kpiChecklistTitle" class="modal-title">Select mandatory monthly KPIs</div>
+        </div>
+        <button id="kpiChecklistClose" class="icon-btn" aria-label="Close">×</button>
+      </div>
+      <div class="checklist-copy">
+        KPIs are grouped by site. Check only the items that must be completed every month. Unchecked items are ignored.
+        From the 2nd day of each month, the system checks January through the previous month and sends each owner one consolidated email per day
+        listing all selected KPIs that are still blank. Use Preview & send now to see the CC list and exact message, then send immediately without waiting for 08:00.
+      </div>
+      <div class="checklist-toolbar">
+        <div class="checklist-toolbar-group">
+          <button id="checklistSelectAll" class="secondary-btn" type="button">Select all</button>
+          <button id="checklistClearAll" class="secondary-btn" type="button">Clear all</button>
+          <button id="checklistEnableDaily" class="secondary-btn" type="button">Enable daily emails</button>
+          <button id="checklistDisableDaily" class="secondary-btn" type="button">Disable daily emails</button>
+          <button id="checklistPreviewSend" class="refresh-btn" type="button">Preview & send now</button>
+        </div>
+        <button id="checklistSave" class="refresh-btn directory-save" type="button">Save KPI checklist</button>
+      </div>
+      <div id="checklistSites" class="checklist-sites"><div class="checklist-empty">Loading KPIs by site…</div></div>
+      <div id="checklistStatus" class="checklist-status" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div id="reminderPreviewModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="reminderPreviewTitle">
+    <div class="modal preview-modal">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow">Exact reminder emails</div>
+          <div id="reminderPreviewTitle" class="modal-title">Who receives the email, who is CC, and the full content</div>
+          <div class="preview-banner">Preview only — nothing has been sent</div>
+        </div>
+        <button id="reminderPreviewClose" class="icon-btn" aria-label="Close">×</button>
+      </div>
+      <div class="preview-copy">
+        This is the same To, CC, subject and message the dashboard will send. Daily automation still runs around 08:00 from day 2.
+        Send now sends immediately and does not wait for that schedule.
+      </div>
+      <div id="previewStats" class="preview-stats"></div>
+      <div id="previewCc" class="preview-cc"></div>
+      <div id="previewMessages" class="preview-messages"><div class="preview-empty">Loading exact reminder emails…</div></div>
+      <div id="previewWarnings"></div>
+      <div class="preview-toolbar">
+        <button id="reminderPreviewReload" class="secondary-btn" type="button">Refresh preview</button>
+        <button id="reminderSendNow" class="danger-btn" type="button">Send these emails now</button>
+      </div>
+      <div id="previewConfirm" class="preview-confirm">
+        <strong>Confirm send.</strong>
+        <div id="previewConfirmCopy"></div>
+        <div class="preview-confirm-actions">
+          <button id="reminderSendCancel" class="secondary-btn" type="button">Cancel</button>
+          <button id="reminderSendConfirm" class="danger-btn" type="button">Yes, send now</button>
+        </div>
+      </div>
+      <div id="previewStatus" class="preview-status" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div id="cardSelectorModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="cardSelectorTitle">
+    <div class="modal card-selector-modal">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow">Executive overview settings</div>
+          <div id="cardSelectorTitle" class="modal-title">Choose cards to display</div>
+        </div>
+        <button id="cardSelectorClose" class="icon-btn" aria-label="Close">×</button>
+      </div>
+      <div class="card-selector-copy">
+        Select the cards that should appear in the executive overview. This is one shared selection for everyone who opens the dashboard.
+      </div>
+      <div id="cardSelectorOptions" class="card-selector-grid"></div>
+      <div class="card-selector-toolbar">
+        <div class="card-selector-actions">
+          <button id="cardSelectorAll" class="secondary-btn" type="button">Select all</button>
+          <button id="cardSelectorReset" class="secondary-btn" type="button">Clear all</button>
+        </div>
+        <button id="cardSelectorSave" class="refresh-btn directory-save" type="button">Save card selection</button>
+      </div>
+      <div id="cardSelectorStatus" class="card-selector-status" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <script>
+    const LOAD_STEPS = [
+      'Connecting to Google Sheet',
+      'Discovering KPI source tabs',
+      'Reading monthly KPI values',
+      'Aggregating all-sites BSV',
+      'Calculating workforce & HSE metrics',
+      'Rendering cards, charts & KPI register'
+    ];
+
+    const STATE = {
+      meta: null,
+      data: null,
+      site: 'ALL',
+      period: 'YTD',
+      category: 'ALL',
+      search: '',
+      trend: 'bsv',
+      charts: {},
+      modalChart: null,
+      autoRefreshTimer: null,
+      visibleCards: null,
+      reminderPreview: null,
+      completeness: null
+    };
+
+    const KIND_LABELS = {
+      fatal: 'Fatalities', lta: 'LTA', nlta: 'NLTA', psse: 'PSSE / PSSI', pse: 'PSE',
+      commuting: 'Commuting', first_aid: 'First Aid', environment_incident: 'Environmental'
+    };
+
+    const SUMMARY_CARD_OPTIONS = [
+      { key: 'total_hours', label: 'Total working hours' },
+      { key: 'bsv', label: 'BSV completion' },
+      { key: 'unsafe', label: 'Unsafe circumstances' },
+      { key: 'walkthrough', label: 'HSE walkthroughs' },
+      { key: 'drills', label: 'Emergency drills' },
+      { key: 'erp', label: 'ERP training' },
+      { key: 'rca', label: 'RCA action closure' },
+      { key: 'lsr', label: 'Life-saving rule breaches' }
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      renderLoaderSteps();
+      bindEvents();
+      boot();
+    });
+
+    function gsMeta() {
+      return new Promise((resolve, reject) => {
+        google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getDashboardMeta();
+      });
+    }
+
+    function gsData() {
+      return new Promise((resolve, reject) => {
+        google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getDashboardData();
+      });
+    }
+
+    function gsSendTestEmail(recipient) {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .sendDashboardTestEmail(recipient);
+      });
+    }
+
+    function gsGetEmailDirectory() {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .getDashboardEmailDirectory();
+      });
+    }
+
+    function gsSaveEmailDirectory(rows) {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .saveDashboardEmailDirectory(rows);
+      });
+    }
+
+    function gsGetReminderChecklist() {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .getDashboardReminderChecklist();
+      });
+    }
+
+    function gsSaveReminderChecklist(rows) {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .saveDashboardReminderChecklist(rows);
+      });
+    }
+
+    function gsSetDailyReminderState(enabled) {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .setDashboardDailyReminderState(enabled);
+      });
+    }
+
+    function gsGetVisitLog() {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .getDashboardVisitLog();
+      });
+    }
+
+    function gsGetOverviewCompleteness() {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .getDashboardOverviewCompleteness();
+      });
+    }
+
+    function gsGetReminderEmailPreview() {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .getDashboardReminderEmailPreview();
+      });
+    }
+
+    function gsSendReminderEmailsNow(confirmed) {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .sendDashboardReminderEmailsNow(confirmed);
+      });
+    }
+
+    function gsGetCardVisibility() {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .getDashboardCardVisibility();
+      });
+    }
+
+    function gsSaveCardVisibility(rows) {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .saveDashboardCardVisibility(rows);
+      });
+    }
+
+    async function boot() {
+      try {
+        setLoad(4, 'Initializing interface…', -1);
+        STATE.meta = await gsMeta();
+        applyVisitLogAccess();
+        setLoad(20, 'Connected to ' + STATE.meta.spreadsheetName, 0);
+        hydrateFiltersFromMeta();
+
+        setLoad(31, 'KPI source tabs discovered', 1);
+        STATE.data = await gsData();
+        setLoad(63, 'Monthly KPI values loaded', 2);
+
+        try {
+          applyCardVisibility(await gsGetCardVisibility());
+        } catch (err) {
+          STATE.visibleCards = new Set(SUMMARY_CARD_OPTIONS.map(card => card.key));
+        }
+
+        prepareData();
+        setLoad(75, 'All-sites BSV aggregation complete', 3);
+
+        renderSummaryAndEvents();
+        setLoad(85, 'Workforce & HSE metrics calculated', 4);
+
+        renderCharts();
+        renderTablesAndOwners();
+        setLoad(98, 'Finalizing live dashboard', 5);
+
+        updateSyncUI();
+        setLoad(100, 'Dashboard ready', 5);
+        setTimeout(() => document.getElementById('loader').classList.add('hide'), 420);
+        startAutoRefresh();
+        loadOverviewCompleteness();
+      } catch (err) {
+        showLoadError(err);
+      }
+    }
+
+    async function refreshData(showLoader = false) {
+      const syncPill = document.getElementById('syncPill');
+      syncPill.classList.add('loading');
+      document.getElementById('syncText').textContent = 'Syncing…';
+      if (showLoader) {
+        document.getElementById('loader').classList.remove('hide');
+        setLoad(32, 'Refreshing live KPI values…', 2);
+      }
+      try {
+        STATE.data = await gsData();
+        prepareData();
+        renderAll();
+        updateSyncUI();
+        loadOverviewCompleteness();
+        if (showLoader) {
+          setLoad(100, 'Live data refreshed', 5);
+          setTimeout(() => document.getElementById('loader').classList.add('hide'), 250);
+        }
+      } catch (err) {
+        if (showLoader) showLoadError(err);
+        else document.getElementById('syncText').textContent = 'Sync failed';
+      } finally {
+        syncPill.classList.remove('loading');
+      }
+    }
+
+    function prepareData() {
+      STATE.data.metricsById = Object.fromEntries(STATE.data.metrics.map(m => [m.id, m]));
+      STATE.data.categories = [...new Set(STATE.data.metrics.map(m => m.category))].sort();
+      renderNotice();
+    }
+
+    function renderAll() {
+      renderSummaryAndEvents();
+      renderCharts();
+      renderTablesAndOwners();
+    }
+
+    function bindEvents() {
+      document.querySelectorAll('.header-nav [data-dashboard-section]').forEach(button => {
+        button.addEventListener('click', () => navigateDashboardSection(button));
+      });
+      document.getElementById('siteFilter').addEventListener('change', e => { STATE.site = e.target.value; renderAll(); });
+      document.getElementById('periodFilter').addEventListener('change', e => { STATE.period = e.target.value; renderAll(); });
+      document.getElementById('categoryFilter').addEventListener('change', e => { STATE.category = e.target.value; renderKpiTable(); });
+      document.getElementById('searchFilter').addEventListener('input', e => { STATE.search = e.target.value.trim().toLowerCase(); renderKpiTable(); });
+      document.getElementById('trendSelect').addEventListener('change', e => { STATE.trend = e.target.value; renderTrendChart(); });
+      document.getElementById('refreshBtn').addEventListener('click', () => refreshData(true));
+      document.getElementById('testEmailBtn').addEventListener('click', openTestEmailModal);
+      document.getElementById('testEmailClose').addEventListener('click', closeTestEmailModal);
+      document.getElementById('testEmailSend').addEventListener('click', sendTestEmailFromDashboard);
+      document.getElementById('testEmailInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') sendTestEmailFromDashboard();
+      });
+      document.getElementById('testEmailModal').addEventListener('click', e => {
+        if (e.target.id === 'testEmailModal') closeTestEmailModal();
+      });
+      document.getElementById('visitLogBtn').addEventListener('click', openVisitLogModal);
+      document.getElementById('visitLogClose').addEventListener('click', closeVisitLogModal);
+      document.getElementById('visitLogRefresh').addEventListener('click', loadVisitLog);
+      document.getElementById('visitLogModal').addEventListener('click', e => {
+        if (e.target.id === 'visitLogModal') closeVisitLogModal();
+      });
+      document.getElementById('emailDirectoryBtn').addEventListener('click', openEmailDirectoryModal);
+      document.getElementById('emailDirectoryClose').addEventListener('click', closeEmailDirectoryModal);
+      document.getElementById('directoryAdd').addEventListener('click', () => addEmailDirectoryRow());
+      document.getElementById('directorySave').addEventListener('click', saveEmailDirectoryFromDashboard);
+      document.getElementById('directoryRows').addEventListener('click', e => {
+        const button = e.target.closest('.directory-remove');
+        if (button) removeEmailDirectoryRow(button.closest('.directory-row'));
+      });
+      document.getElementById('directoryRows').addEventListener('input', e => {
+        if (!e.target.classList.contains('directory-email')) return;
+        const row = e.target.closest('.directory-row');
+        const active = row && row.querySelector('.directory-active');
+        if (active && e.target.checkValidity() && e.target.value.trim()) active.checked = true;
+      });
+      document.getElementById('emailDirectoryModal').addEventListener('click', e => {
+        if (e.target.id === 'emailDirectoryModal') closeEmailDirectoryModal();
+      });
+      document.getElementById('kpiChecklistBtn').addEventListener('click', openKpiChecklistModal);
+      document.getElementById('kpiChecklistClose').addEventListener('click', closeKpiChecklistModal);
+      document.getElementById('checklistSelectAll').addEventListener('click', () => setAllChecklistItems(true));
+      document.getElementById('checklistClearAll').addEventListener('click', () => setAllChecklistItems(false));
+      document.getElementById('checklistEnableDaily').addEventListener('click', () => setDailyReminderFromDashboard(true));
+      document.getElementById('checklistDisableDaily').addEventListener('click', () => setDailyReminderFromDashboard(false));
+      document.getElementById('checklistPreviewSend').addEventListener('click', openReminderPreviewModal);
+      document.getElementById('checklistSave').addEventListener('click', saveKpiChecklistFromDashboard);
+      document.getElementById('reminderPreviewClose').addEventListener('click', closeReminderPreviewModal);
+      document.getElementById('reminderPreviewReload').addEventListener('click', () => loadReminderEmailPreview(true));
+      document.getElementById('reminderSendNow').addEventListener('click', showReminderSendConfirm);
+      document.getElementById('reminderSendCancel').addEventListener('click', hideReminderSendConfirm);
+      document.getElementById('reminderSendConfirm').addEventListener('click', sendReminderEmailsNowFromDashboard);
+      document.getElementById('reminderPreviewModal').addEventListener('click', e => {
+        if (e.target.id === 'reminderPreviewModal') closeReminderPreviewModal();
+      });
+      document.getElementById('checklistSites').addEventListener('change', e => {
+        if (e.target.classList.contains('checklist-check')) updateChecklistSiteCount(e.target.closest('.checklist-site'));
+      });
+      document.getElementById('kpiChecklistModal').addEventListener('click', e => {
+        if (e.target.id === 'kpiChecklistModal') closeKpiChecklistModal();
+      });
+      document.getElementById('cardSelectorBtn').addEventListener('click', openCardSelectorModal);
+      document.getElementById('cardSelectorClose').addEventListener('click', closeCardSelectorModal);
+      document.getElementById('cardSelectorAll').addEventListener('click', () => setAllCardSelectorOptions(true));
+      document.getElementById('cardSelectorReset').addEventListener('click', () => setAllCardSelectorOptions(false));
+      document.getElementById('cardSelectorSave').addEventListener('click', saveCardSelectorFromDashboard);
+      document.getElementById('cardSelectorModal').addEventListener('click', e => {
+        if (e.target.id === 'cardSelectorModal') closeCardSelectorModal();
+      });
+      document.getElementById('themeBtn').addEventListener('click', toggleTheme);
+      document.getElementById('sectionJump').addEventListener('change', e => {
+        const button = document.querySelector('.header-nav [data-dashboard-section="' + e.target.value + '"]');
+        if (button) navigateDashboardSection(button);
+      });
+      document.getElementById('heroActions').addEventListener('click', e => {
+        if (e.target.id === 'heroPreviewSend') openReminderPreviewModal();
+        if (e.target.id === 'heroOpenChecklist') openKpiChecklistModal();
+      });
+      document.getElementById('modalClose').addEventListener('click', closeModal);
+      document.getElementById('metricModal').addEventListener('click', e => { if (e.target.id === 'metricModal') closeModal(); });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+          closeModal();
+          closeTestEmailModal();
+          closeVisitLogModal();
+          closeEmailDirectoryModal();
+          closeKpiChecklistModal();
+          closeReminderPreviewModal();
+          closeCardSelectorModal();
+        }
+      });
+      document.addEventListener('visibilitychange', () => { if (!document.hidden && STATE.data) refreshData(false); });
+    }
+
+    function navigateDashboardSection(button) {
+      const label = button.dataset.dashboardSection;
+      let target = null;
+
+      if (label === 'Overview') {
+        target = document.getElementById('overview');
+      } else {
+        const heading = [...document.querySelectorAll('.section-title')]
+          .find(el => el.textContent.trim() === label);
+        target = heading ? heading.closest('.section') : null;
+      }
+
+      if (!target) return;
+      document.querySelectorAll('.header-nav [data-dashboard-section]').forEach(item => {
+        const active = item === button;
+        item.classList.toggle('is-active', active);
+        if (active) item.setAttribute('aria-current', 'page');
+        else item.removeAttribute('aria-current');
+      });
+      const jump = document.getElementById('sectionJump');
+      if (jump) jump.value = label;
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function openTestEmailModal() {
+      const modal = document.getElementById('testEmailModal');
+      const status = document.getElementById('testEmailStatus');
+      status.className = 'test-email-status';
+      status.textContent = '';
+      modal.classList.add('show');
+      setTimeout(() => document.getElementById('testEmailInput').focus(), 80);
+    }
+
+    function closeTestEmailModal() {
+      document.getElementById('testEmailModal').classList.remove('show');
+    }
+
+    function applyVisitLogAccess() {
+      const btn = document.getElementById('visitLogBtn');
+      btn.hidden = !(STATE.meta && STATE.meta.canViewVisitLog);
+    }
+
+    function openVisitLogModal() {
+      if (!STATE.meta || !STATE.meta.canViewVisitLog) return;
+      document.getElementById('visitLogModal').classList.add('show');
+      loadVisitLog();
+    }
+
+    function closeVisitLogModal() {
+      document.getElementById('visitLogModal').classList.remove('show');
+    }
+
+    async function loadVisitLog() {
+      const rows = document.getElementById('visitLogRows');
+      const status = document.getElementById('visitLogStatus');
+      const refreshBtn = document.getElementById('visitLogRefresh');
+      status.className = 'visit-status';
+      status.textContent = '';
+      rows.innerHTML = '<div class="visit-empty">Loading visitor history…</div>';
+      refreshBtn.disabled = true;
+      try {
+        const result = await gsGetVisitLog();
+        document.getElementById('visitUnique').textContent = String(result.uniqueVisitors || 0);
+        document.getElementById('visitTotal').textContent = String(result.totalVisits || 0);
+        document.getElementById('visitTimezone').textContent = result.timezone || '—';
+        const visitors = result.visitors || [];
+        if (!visitors.length) {
+          rows.innerHTML = '<div class="visit-empty">No visits recorded yet.</div>';
+        } else {
+          rows.innerHTML = '<table class="missing-table"><thead><tr><th>Email</th><th>Last visit</th><th>First visit</th><th>Visits</th></tr></thead><tbody>' +
+            visitors.map(row => (
+              '<tr><td>' + esc(row.email) + '</td><td class="nowrap">' + esc(row.lastVisit) +
+              '</td><td class="nowrap">' + esc(row.firstVisit) + '</td><td>' + esc(String(row.visitCount)) +
+              '</td></tr>'
+            )).join('') +
+            '</tbody></table>';
+        }
+      } catch (err) {
+        rows.innerHTML = '<div class="visit-empty">Visit history is unavailable.</div>';
+        status.textContent = err && err.message ? err.message : String(err || 'Visit history is private.');
+        status.classList.add('show', 'error');
+      } finally {
+        refreshBtn.disabled = false;
+      }
+    }
+
+    async function sendTestEmailFromDashboard() {
+      const input = document.getElementById('testEmailInput');
+      const button = document.getElementById('testEmailSend');
+      const status = document.getElementById('testEmailStatus');
+      const recipient = input.value.trim();
+
+      status.className = 'test-email-status';
+      status.textContent = '';
+      if (!recipient || !input.checkValidity()) {
+        status.textContent = 'Enter a valid email address.';
+        status.classList.add('show', 'error');
+        input.focus();
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = 'Sending…';
+      try {
+        const result = await gsSendTestEmail(recipient);
+        status.textContent = 'Test email sent successfully to ' + result.recipient +
+          '. Remaining daily email quota: ' + result.remainingDailyQuota + '.';
+        status.classList.add('show', 'success');
+      } catch (err) {
+        const message = err && err.message ? err.message : String(err || 'The test email could not be sent.');
+        status.textContent = message;
+        status.classList.add('show', 'error');
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Send test';
+      }
+    }
+
+    async function openEmailDirectoryModal() {
+      const modal = document.getElementById('emailDirectoryModal');
+      const rows = document.getElementById('directoryRows');
+      const status = document.getElementById('directoryStatus');
+      modal.classList.add('show');
+      rows.innerHTML = '<div class="directory-empty">Loading email directory…</div>';
+      status.className = 'directory-status';
+      status.textContent = '';
+
+      try {
+        const result = await gsGetEmailDirectory();
+        renderEmailDirectoryRows(result.rows || []);
+        populateEmailDirectoryOptions(result.rows || []);
+        status.textContent = (result.sourceOwnerCount || 0) + ' KPI owner(s) discovered across the site sheets. ' +
+          'Authorized editor: ' + result.userEmail + '. Directory tab: ' + result.sheetName + '.';
+        status.classList.add('show', 'success');
+      } catch (err) {
+        rows.innerHTML = '<div class="directory-empty">Email directory is unavailable.</div>';
+        status.textContent = err && err.message ? err.message : String(err || 'Access could not be verified.');
+        status.classList.add('show', 'error');
+      }
+    }
+
+    function closeEmailDirectoryModal() {
+      document.getElementById('emailDirectoryModal').classList.remove('show');
+    }
+
+    function renderEmailDirectoryRows(rows) {
+      const container = document.getElementById('directoryRows');
+      const list = rows.length ? rows : [{ sites: ['Manual entry'], name: '', email: '', active: false, cc: false }];
+      container.innerHTML = list.map(directoryRowHtml).join('');
+    }
+
+    function directoryRowHtml(row) {
+      const fromKpiSheets = !!row.fromKpiSheets;
+      return `<div class="directory-row">
+        <span class="directory-sites" title="${escAttr((row.sites || []).join(', '))}">${esc((row.sites || ['Manual entry']).join(', '))}</span>
+        <input class="directory-input directory-name" type="text" value="${escAttr(row.name || '')}" placeholder="Exact KPI owner name" aria-label="Employee name" ${fromKpiSheets ? 'readonly' : ''}>
+        <input class="directory-input directory-email" type="email" value="${escAttr(row.email || '')}" placeholder="name@airliquide.com" aria-label="Employee email">
+        <input class="directory-check directory-active" type="checkbox" ${row.active ? 'checked' : ''} aria-label="Active">
+        <input class="directory-check directory-cc" type="checkbox" ${row.cc ? 'checked' : ''} aria-label="CC all reminders">
+        <button class="directory-remove" type="button" title="${fromKpiSheets ? 'Owner is controlled by the KPI sheet' : 'Remove employee'}" aria-label="Remove employee" ${fromKpiSheets ? 'disabled' : ''}>×</button>
+      </div>`;
+    }
+
+    function addEmailDirectoryRow() {
+      const container = document.getElementById('directoryRows');
+      const empty = container.querySelector('.directory-empty');
+      if (empty) container.innerHTML = '';
+      container.insertAdjacentHTML('beforeend', directoryRowHtml({ sites: ['Manual entry'], name: '', email: '', active: false, cc: false }));
+      const inputs = container.querySelectorAll('.directory-name');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    }
+
+    function removeEmailDirectoryRow(row) {
+      if (row) row.remove();
+      if (!document.querySelector('#directoryRows .directory-row')) renderEmailDirectoryRows([]);
+    }
+
+    function collectEmailDirectoryRows() {
+      return [...document.querySelectorAll('#directoryRows .directory-row')].map(row => ({
+        name: row.querySelector('.directory-name').value.trim(),
+        email: row.querySelector('.directory-email').value.trim(),
+        active: row.querySelector('.directory-active').checked,
+        cc: row.querySelector('.directory-cc').checked
+      })).filter(row => row.name || row.email);
+    }
+
+    async function saveEmailDirectoryFromDashboard() {
+      const button = document.getElementById('directorySave');
+      const status = document.getElementById('directoryStatus');
+      const rows = collectEmailDirectoryRows();
+      button.disabled = true;
+      button.textContent = 'Saving…';
+      status.className = 'directory-status';
+      status.textContent = '';
+
+      try {
+        const result = await gsSaveEmailDirectory(rows);
+        renderEmailDirectoryRows(result.rows || []);
+        populateEmailDirectoryOptions(result.rows || []);
+        status.textContent = 'Email directory saved successfully. ' + (result.rows || []).length + ' employee(s) stored.';
+        status.classList.add('show', 'success');
+      } catch (err) {
+        status.textContent = err && err.message ? err.message : String(err || 'The directory could not be saved.');
+        status.classList.add('show', 'error');
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Save directory';
+      }
+    }
+
+    function populateEmailDirectoryOptions(rows) {
+      document.getElementById('emailDirectoryOptions').innerHTML = (rows || [])
+        .filter(row => row.active && row.email)
+        .map(row => `<option value="${escAttr(row.email)}">${esc(row.name || '')}</option>`)
+        .join('');
+    }
+
+    async function openKpiChecklistModal() {
+      const modal = document.getElementById('kpiChecklistModal');
+      const sites = document.getElementById('checklistSites');
+      const status = document.getElementById('checklistStatus');
+      modal.classList.add('show');
+      sites.innerHTML = '<div class="checklist-empty">Loading KPIs by site…</div>';
+      status.className = 'checklist-status';
+      status.textContent = '';
+
+      try {
+        const result = await gsGetReminderChecklist();
+        renderReminderChecklist(result.rows || []);
+        status.textContent = (result.dailyEnabled ? 'Daily emails are enabled. ' : 'Daily emails are disabled. ') +
+          (result.selectedCount || 0) + ' KPI(s) currently monitored. Checking starts on day ' +
+          result.startDay + ' at approximately ' + result.triggerHour + ':00.';
+        status.classList.add('show', 'success');
+      } catch (err) {
+        sites.innerHTML = '<div class="checklist-empty">The KPI checklist is unavailable.</div>';
+        status.textContent = err && err.message ? err.message : String(err || 'The checklist could not be loaded.');
+        status.classList.add('show', 'error');
+      }
+    }
+
+    function closeKpiChecklistModal() {
+      document.getElementById('kpiChecklistModal').classList.remove('show');
+    }
+
+    function renderReminderChecklist(rows) {
+      const container = document.getElementById('checklistSites');
+      if (!rows.length) {
+        container.innerHTML = '<div class="checklist-empty">No eligible KPI rows were found in the configured site tabs.</div>';
+        return;
+      }
+      const grouped = rows.reduce((map, row) => {
+        (map[row.site] ||= []).push(row);
+        return map;
+      }, {});
+      container.innerHTML = Object.entries(grouped).map(([site, items]) => {
+        const selected = items.filter(item => item.monitor).length;
+        return `<section class="checklist-site">
+          <div class="checklist-site-head">
+            <span class="checklist-site-name">${esc(site)}</span>
+            <span class="checklist-site-count">${selected} of ${items.length} selected</span>
+          </div>
+          ${items.map(checklistRowHtml).join('')}
+        </section>`;
+      }).join('');
+    }
+
+    function checklistRowHtml(row) {
+      return `<label class="checklist-row" data-key="${escAttr(row.key)}">
+        <input class="checklist-check" type="checkbox" ${row.monitor ? 'checked' : ''} aria-label="Monitor ${escAttr(row.label || '')}">
+        <span class="checklist-kpi">${esc(row.label || '')}</span>
+        <span class="checklist-owner">${esc(row.owners || 'No KPI owner assigned')}</span>
+        <span class="checklist-category">${esc(row.category || '')}</span>
+      </label>`;
+    }
+
+    function setAllChecklistItems(checked) {
+      document.querySelectorAll('#checklistSites .checklist-check').forEach(input => { input.checked = checked; });
+      document.querySelectorAll('#checklistSites .checklist-site').forEach(site => {
+        const total = site.querySelectorAll('.checklist-check').length;
+        const count = checked ? total : 0;
+        const label = site.querySelector('.checklist-site-count');
+        if (label) label.textContent = count + ' of ' + total + ' selected';
+      });
+    }
+
+    function updateChecklistSiteCount(site) {
+      if (!site) return;
+      const total = site.querySelectorAll('.checklist-check').length;
+      const selected = site.querySelectorAll('.checklist-check:checked').length;
+      const label = site.querySelector('.checklist-site-count');
+      if (label) label.textContent = selected + ' of ' + total + ' selected';
+    }
+
+    function collectReminderChecklistRows() {
+      return [...document.querySelectorAll('#checklistSites .checklist-row')].map(row => ({
+        key: row.dataset.key,
+        monitor: row.querySelector('.checklist-check').checked
+      }));
+    }
+
+    async function saveKpiChecklistFromDashboard() {
+      const button = document.getElementById('checklistSave');
+      const status = document.getElementById('checklistStatus');
+      const rows = collectReminderChecklistRows();
+      button.disabled = true;
+      button.textContent = 'Saving…';
+      status.className = 'checklist-status';
+      status.textContent = '';
+      try {
+        const result = await gsSaveReminderChecklist(rows);
+        renderReminderChecklist(result.rows || []);
+        status.textContent = 'Checklist saved. ' + (result.selectedCount || 0) +
+          ' KPI(s) are selected. Daily emails are currently ' + (result.dailyEnabled ? 'enabled.' : 'disabled.');
+        status.classList.add('show', 'success');
+        loadOverviewCompleteness();
+      } catch (err) {
+        status.textContent = err && err.message ? err.message : String(err || 'The checklist could not be saved.');
+        status.classList.add('show', 'error');
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Save KPI checklist';
+      }
+    }
+
+    async function openReminderPreviewModal() {
+      const modal = document.getElementById('reminderPreviewModal');
+      modal.classList.add('show');
+      hideReminderSendConfirm();
+      await loadReminderEmailPreview(false);
+    }
+
+    function closeReminderPreviewModal() {
+      hideReminderSendConfirm();
+      document.getElementById('reminderPreviewModal').classList.remove('show');
+    }
+
+    function hideReminderSendConfirm() {
+      document.getElementById('previewConfirm').classList.remove('show');
+    }
+
+    function setPreviewStatus(message, kind) {
+      const status = document.getElementById('previewStatus');
+      status.className = 'preview-status';
+      status.textContent = message || '';
+      if (message) status.classList.add('show', kind || 'success');
+    }
+
+    async function loadReminderEmailPreview(fromReload) {
+      const messages = document.getElementById('previewMessages');
+      const sendButton = document.getElementById('reminderSendNow');
+      const reloadButton = document.getElementById('reminderPreviewReload');
+      hideReminderSendConfirm();
+      setPreviewStatus('', '');
+      STATE.reminderPreview = null;
+      sendButton.disabled = true;
+      reloadButton.disabled = true;
+      messages.innerHTML = '<div class="preview-empty">' +
+        (fromReload ? 'Refreshing exact reminder emails…' : 'Loading exact reminder emails…') +
+        '</div>';
+      document.getElementById('previewStats').innerHTML = '';
+      document.getElementById('previewCc').innerHTML = '<h3>CC on every reminder</h3><p>Loading CC list…</p>';
+      document.getElementById('previewWarnings').innerHTML = '';
+
+      try {
+        if (document.querySelectorAll('#checklistSites .checklist-row').length) {
+          const saved = await gsSaveReminderChecklist(collectReminderChecklistRows());
+          renderReminderChecklist(saved.rows || []);
+        }
+        const preview = await gsGetReminderEmailPreview();
+        STATE.reminderPreview = preview;
+        renderReminderEmailPreview(preview);
+      } catch (err) {
+        messages.innerHTML = '<div class="preview-empty">The reminder preview could not be loaded.</div>';
+        document.getElementById('previewCc').innerHTML = '<h3>CC on every reminder</h3><p>The CC list is unavailable until the preview loads.</p>';
+        setPreviewStatus(err && err.message ? err.message : String(err || 'The reminder preview could not be loaded.'), 'error');
+      } finally {
+        reloadButton.disabled = false;
+      }
+    }
+
+    function renderReminderEmailPreview(preview) {
+      const emails = preview.emails || [];
+      const ccEmails = preview.ccEmails || [];
+      const withoutEmail = preview.withoutEmail || [];
+      const unassigned = preview.unassigned || [];
+      const warnings = preview.warnings || [];
+      const sendButton = document.getElementById('reminderSendNow');
+
+      document.getElementById('previewStats').innerHTML = [
+        previewStatHtml('Reporting period', preview.periodLabel || ((preview.monthName || '') + ' ' + (preview.year || ''))),
+        previewStatHtml('Emails ready to send', String(emails.length)),
+        previewStatHtml('Missing required KPIs', String(preview.missingCount || 0)),
+        previewStatHtml('KPIs monitored', String(preview.selectedCount || 0))
+      ].join('');
+
+      document.getElementById('previewCc').innerHTML = '<h3>CC on every reminder</h3>' +
+        (ccEmails.length
+          ? '<p>These addresses are taken from Email Directory → CC Daily Reminders and will be copied on every owner email.</p>' +
+            '<div class="preview-cc-list">' + ccEmails.map(email => '<span class="preview-chip">' + esc(email) + '</span>').join('') + '</div>'
+          : '<p>No CC recipients are selected. Open Email Directory and tick <strong>CC all</strong> for anyone who should receive a copy.</p>');
+
+      const messages = document.getElementById('previewMessages');
+      if (!emails.length) {
+        messages.innerHTML = '<div class="preview-empty">No reminder emails are ready. Either the selected KPIs from ' +
+          esc(preview.periodLabel || ((preview.monthName || '') + ' ' + (preview.year || ''))) +
+          ' are already complete, or owners still need an active email in the Email Directory.</div>';
+      } else {
+        messages.innerHTML = emails.map(previewMessageHtml).join('');
+        [...messages.querySelectorAll('[data-preview-html]')].forEach(node => {
+          const index = Number(node.getAttribute('data-preview-html'));
+          node.innerHTML = emails[index] && emails[index].htmlBody ? emails[index].htmlBody : '';
+        });
+      }
+
+      const warningBlocks = [];
+      if (withoutEmail.length) {
+        warningBlocks.push('<div class="preview-warning"><strong>Owners without an email address.</strong> ' +
+          withoutEmail.map(owner => esc(owner.name) + ' (' + owner.missingCount + ')').join(', ') +
+          '. Add their address in Email Directory before they can receive mail.</div>');
+      }
+      if (unassigned.length) {
+        warningBlocks.push('<div class="preview-warning"><strong>Unassigned missing KPIs.</strong> ' +
+          unassigned.map(item => (item.month ? esc(item.month) + ' · ' : '') + esc(item.site) + ': ' + esc(item.label) + ' (' + esc(item.sheet) + ' · row ' + esc(item.row) + ')').join('; ') +
+          '.</div>');
+      }
+      warnings.forEach(warning => {
+        warningBlocks.push('<div class="preview-warning">' + esc(warning) + '</div>');
+      });
+      document.getElementById('previewWarnings').innerHTML = warningBlocks.join('');
+
+      sendButton.disabled = !emails.length;
+      setPreviewStatus(
+        emails.length
+          ? 'Preview only. Review To, CC and the message below, then click Send these emails now if you want them sent immediately.'
+          : 'Nothing will be sent. There is no deliverable reminder email from January through the last completed month.',
+        emails.length ? 'success' : 'error'
+      );
+    }
+
+    function previewStatHtml(label, value) {
+      return '<div class="preview-stat"><strong>' + esc(label) + '</strong>' + esc(value) + '</div>';
+    }
+
+    function previewMessageHtml(email, index) {
+      const cc = (email.cc || []).length ? email.cc.join(', ') : 'None';
+      return '<article class="preview-message">' +
+        '<div class="preview-message-head">' +
+          '<div><span>Recipient ' + (index + 1) + '</span><h3>' + esc(email.ownerName || '') + '</h3></div>' +
+          '<div class="preview-missing">' + esc(email.missingCount || 0) + ' missing KPI(s)</div>' +
+        '</div>' +
+        '<div class="preview-envelope">' +
+          '<div><strong>To</strong><span>' + esc(email.to || '') + '</span></div>' +
+          '<div><strong>CC</strong><span>' + esc(cc) + '</span></div>' +
+          '<div><strong>Subject</strong><span>' + esc(email.subject || '') + '</span></div>' +
+        '</div>' +
+        '<div class="preview-body" data-preview-html="' + index + '"></div>' +
+      '</article>';
+    }
+
+    function showReminderSendConfirm() {
+      const preview = STATE.reminderPreview;
+      const emails = preview && preview.emails ? preview.emails : [];
+      const confirmBox = document.getElementById('previewConfirm');
+      if (!emails.length) {
+        setPreviewStatus('No reminder emails can be sent from this preview.', 'error');
+        confirmBox.classList.remove('show');
+        return;
+      }
+      const cc = (preview.ccEmails || []).join(', ') || 'None';
+      document.getElementById('previewConfirmCopy').textContent =
+        'This will send ' + emails.length + ' email(s) now for ' +
+        (preview.monthName || '') + ' ' + (preview.year || '') +
+        '. Recipients: ' + emails.map(email => email.ownerName + ' <' + email.to + '>').join(', ') +
+        '. CC: ' + cc +
+        '. This does not wait for the 08:00 daily schedule and may resend on the same day.';
+      confirmBox.classList.add('show');
+      setPreviewStatus('Confirm below to send immediately. Cancel if you only wanted to review the content.', 'success');
+    }
+
+    async function sendReminderEmailsNowFromDashboard() {
+      const preview = STATE.reminderPreview;
+      const emails = preview && preview.emails ? preview.emails : [];
+      const sendButton = document.getElementById('reminderSendNow');
+      const confirmButton = document.getElementById('reminderSendConfirm');
+      if (!emails.length) {
+        setPreviewStatus('No reminder emails can be sent from this preview.', 'error');
+        return;
+      }
+      sendButton.disabled = true;
+      confirmButton.disabled = true;
+      confirmButton.textContent = 'Sending…';
+      setPreviewStatus('Sending reminder emails now…', 'success');
+      try {
+        const result = await gsSendReminderEmailsNow(true);
+        hideReminderSendConfirm();
+        if (result && result.ok) {
+          setPreviewStatus(
+            (result.message || 'Reminder emails sent.') +
+            (result.noEmail && result.noEmail.length ? ' Not sent (no email): ' + result.noEmail.join(', ') + '.' : '') +
+            (result.ccEmails && result.ccEmails.length ? ' CC: ' + result.ccEmails.join(', ') + '.' : ' No CC recipients.'),
+            'success'
+          );
+          loadOverviewCompleteness();
+        } else {
+          setPreviewStatus(result && result.message ? result.message : 'No reminder emails were sent.', 'error');
+          sendButton.disabled = false;
+        }
+      } catch (err) {
+        setPreviewStatus(err && err.message ? err.message : String(err || 'The reminder emails could not be sent.'), 'error');
+        sendButton.disabled = false;
+      } finally {
+        confirmButton.disabled = false;
+        confirmButton.textContent = 'Yes, send now';
+      }
+    }
+
+    async function setDailyReminderFromDashboard(enabled) {
+      const enableButton = document.getElementById('checklistEnableDaily');
+      const disableButton = document.getElementById('checklistDisableDaily');
+      const status = document.getElementById('checklistStatus');
+      enableButton.disabled = true;
+      disableButton.disabled = true;
+      status.className = 'checklist-status';
+      status.textContent = '';
+      try {
+        if (enabled) {
+          const saved = await gsSaveReminderChecklist(collectReminderChecklistRows());
+          renderReminderChecklist(saved.rows || []);
+        }
+        const result = await gsSetDailyReminderState(enabled);
+        status.textContent = result.dailyEnabled
+          ? 'Daily reminders enabled. From day ' + result.startDay + ', January through the previous month will be checked at approximately ' + result.triggerHour + ':00.'
+          : 'Daily reminders disabled. No automatic KPI reminder emails will be sent.';
+        status.classList.add('show', 'success');
+      } catch (err) {
+        status.textContent = err && err.message ? err.message : String(err || 'The reminder schedule could not be changed.');
+        status.classList.add('show', 'error');
+      } finally {
+        enableButton.disabled = false;
+        disableButton.disabled = false;
+      }
+    }
+
+    function applyCardVisibility(result) {
+      const keys = result && Array.isArray(result.visibleKeys)
+        ? result.visibleKeys
+        : SUMMARY_CARD_OPTIONS.map(card => card.key);
+      STATE.visibleCards = new Set(keys);
+    }
+
+    async function openCardSelectorModal() {
+      const modal = document.getElementById('cardSelectorModal');
+      const options = document.getElementById('cardSelectorOptions');
+      const status = document.getElementById('cardSelectorStatus');
+      modal.classList.add('show');
+      options.innerHTML = '<div class="directory-empty">Loading card selection…</div>';
+      status.className = 'card-selector-status';
+      status.textContent = '';
+      try {
+        const result = await gsGetCardVisibility();
+        applyCardVisibility(result);
+        renderCardSelectorOptions(result.cards || []);
+        if (STATE.data) renderSummaryAndEvents();
+      } catch (err) {
+        renderCardSelectorOptions(SUMMARY_CARD_OPTIONS.map(card => ({
+          ...card,
+          visible: !STATE.visibleCards || STATE.visibleCards.has(card.key)
+        })));
+        status.textContent = err && err.message ? err.message : String(err || 'The saved card selection could not be loaded.');
+        status.classList.add('show', 'error');
+      }
+    }
+
+    function closeCardSelectorModal() {
+      document.getElementById('cardSelectorModal').classList.remove('show');
+    }
+
+    function renderCardSelectorOptions(cards) {
+      const byKey = Object.fromEntries((cards || []).map(card => [card.key, card]));
+      document.getElementById('cardSelectorOptions').innerHTML = SUMMARY_CARD_OPTIONS.map(card => {
+        const current = byKey[card.key] || card;
+        const visible = current.visible !== false;
+        return `<label class="card-selector-option" data-key="${escAttr(card.key)}">
+          <input class="card-selector-check" type="checkbox" ${visible ? 'checked' : ''}>
+          <span>${esc(card.label)}</span>
+        </label>`;
+      }).join('');
+    }
+
+    function setAllCardSelectorOptions(visible) {
+      document.querySelectorAll('#cardSelectorOptions .card-selector-check')
+        .forEach(input => { input.checked = visible; });
+    }
+
+    function collectCardSelectorOptions() {
+      return [...document.querySelectorAll('#cardSelectorOptions .card-selector-option')].map(row => ({
+        key: row.dataset.key,
+        visible: row.querySelector('.card-selector-check').checked
+      }));
+    }
+
+    async function saveCardSelectorFromDashboard() {
+      const button = document.getElementById('cardSelectorSave');
+      const status = document.getElementById('cardSelectorStatus');
+      const rows = collectCardSelectorOptions();
+      if (!rows.some(row => row.visible)) {
+        status.textContent = 'Select at least one executive card.';
+        status.className = 'card-selector-status show error';
+        return;
+      }
+      button.disabled = true;
+      button.textContent = 'Saving…';
+      status.className = 'card-selector-status';
+      status.textContent = '';
+      try {
+        const result = await gsSaveCardVisibility(rows);
+        applyCardVisibility(result);
+        renderCardSelectorOptions(result.cards || []);
+        renderSummaryAndEvents();
+        status.textContent = (result.visibleKeys || []).length + ' card(s) selected. This shared view is now active for all dashboard users.';
+        status.classList.add('show', 'success');
+      } catch (err) {
+        status.textContent = err && err.message ? err.message : String(err || 'The card selection could not be saved.');
+        status.classList.add('show', 'error');
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Save card selection';
+      }
+    }
+
+    function hydrateFiltersFromMeta() {
+      document.getElementById('yearText').textContent = STATE.meta.year;
+      const siteSelect = document.getElementById('siteFilter');
+      const found = STATE.meta.sources.filter(s => s.found);
+      found.forEach(s => siteSelect.insertAdjacentHTML('beforeend', `<option value="${esc(s.code)}">${esc(s.site)}</option>`));
+
+      const period = document.getElementById('periodFilter');
+      STATE.meta.months.forEach((m, i) => period.insertAdjacentHTML('beforeend', `<option value="${i}">${esc(m)}</option>`));
+    }
+
+    function renderNotice() {
+      const el = document.getElementById('notice');
+      const r = STATE.data.reporting;
+      const warnings = STATE.data.warnings || [];
+      const parts = [];
+      if (r && r.hasPartialLaterData) {
+        parts.push(`Latest complete industrial reporting month: <strong>${esc(r.latestCompleteMonth || '—')}</strong>. ${esc(r.globalLatestMonth || '')} contains partial entries, so YTD includes whatever is currently entered.`);
+      }
+      if (warnings.length) parts.push(`<strong>Source warning:</strong> ${warnings.map(esc).join(' · ')}`);
+      el.innerHTML = parts.join('<br>');
+      el.classList.toggle('show', parts.length > 0);
+    }
+
+    function renderSummaryAndEvents() {
+      const siteName = STATE.site === 'ALL' ? 'All sites' : siteNameByCode(STATE.site);
+      const periodName = STATE.period === 'YTD' ? 'Year to date' : STATE.data.months[Number(STATE.period)];
+      document.getElementById('snapshotSub').textContent = `${siteName} · ${periodName}`;
+
+      const employeeHours = aggregateKind('employee_hours');
+      const contractorHours = aggregateKind('contractor_hours');
+      const totalHours = safeAdd(employeeHours.actual, contractorHours.actual);
+      const bsv = aggregateKind('bsv');
+      const unsafe = aggregateKinds(['unsafe_condition', 'unsafe_act']);
+      const walkthrough = aggregateKind('walkthrough');
+      const drills = aggregateKind('emergency_drill');
+      const erp = aggregateKind('erp_training');
+      const rca = aggregateKind('rca_actions');
+      const lsr = aggregateKind('lsr_breach');
+      const bsvPct = ratioPct(bsv.actual, bsv.target);
+      const cards = [
+        { key: 'total_hours', html: cardHtml('Total working hours', fmt(totalHours, 0), `ALAR ${fmt(employeeHours.actual,0)} · Contractors ${fmt(contractorHours.actual,0)}`, null, null, false) },
+        { key: 'bsv', html: cardHtml('BSV completion', fmt(bsv.actual,0), bsv.target == null ? 'No target in source' : `Annual target ${fmt(bsv.target,0)} · ${fmt(bsvPct,1)}% achieved`, bsvPct, null, false) },
+        { key: 'unsafe', html: cardHtml('Unsafe circumstances', fmt(unsafe.actual,0), 'Conditions + acts reported', null, null, false) },
+        { key: 'walkthrough', html: cardHtml('HSE walkthroughs', fmt(walkthrough.actual,0), walkthrough.target == null ? 'No target in source' : `Annual target ${fmt(walkthrough.target,0)}`, progressFor(walkthrough), null, false) },
+        { key: 'drills', html: cardHtml('Emergency drills', fmt(drills.actual,0), drills.target == null ? 'No target in source' : `Annual target ${fmt(drills.target,0)}`, progressFor(drills), null, false) },
+        { key: 'erp', html: cardHtml('ERP training', fmtPercent(erp.actual), `${erp.countReporting} KPI line${erp.countReporting === 1 ? '' : 's'} reporting`, erp.target ? Math.min(100, erp.actual || 0) : null, null, false) },
+        { key: 'rca', html: cardHtml('RCA action closure', fmtPercent(rca.actual), rca.target == null ? 'Target not available' : `Target ${fmtPercent(rca.target)}`, rca.actual, statusForAggregate(rca), false) },
+        { key: 'lsr', html: cardHtml('Life-saving rule breaches', fmt(lsr.actual,0), lsr.target == null ? 'Monitor trend' : `Maximum target ${fmt(lsr.target,0)}`, null, statusForAggregate(lsr), true) }
+      ];
+      const visibleCards = STATE.visibleCards || new Set(SUMMARY_CARD_OPTIONS.map(card => card.key));
+      document.getElementById('summaryCards').innerHTML = cards
+        .filter(card => visibleCards.has(card.key))
+        .map(card => card.html)
+        .join('');
+
+      const events = [
+        ['fatal', 'Fatalities'], ['lta','LTA'], ['nlta','NLTA'], ['psse','PSSE / PSSI'],
+        ['pse','PSE'], ['first_aid','First Aid'], ['commuting','Commuting'], ['environment_incident','Environmental']
+      ];
+      document.getElementById('eventCards').innerHTML = events.map(([kind,label]) => {
+        const a = aggregateKind(kind);
+        const st = statusForAggregate(a);
+        return `<div class="event-card glass"><div class="event-label"><span class="status-dot ${st}"></span>${esc(label)}</div><div class="event-value">${fmt(a.actual,0)}</div><div class="card-foot"><span>${a.target == null ? 'Target —' : 'Target ' + fmt(a.target,0)}</span></div></div>`;
+      }).join('');
+    }
+
+    function cardHtml(label, value, foot, progress, status, redGlow) {
+      const statusBadge = status ? `<span class="badge ${status}">${statusText(status)}</span>` : '';
+      const p = progress == null || !isFinite(progress) ? '' : `<div class="progress-track"><div class="progress-fill ${redGlow ? 'red':''}" style="width:${clamp(progress,0,100)}%"></div></div>`;
+      return `<div class="kpi-card glass ${redGlow ? 'red-glow':''}"><div class="card-label">${esc(label)}</div><div class="card-value">${value}</div>${p}<div class="card-foot"><span>${foot}</span>${statusBadge}</div></div>`;
+    }
+
+    async function loadOverviewCompleteness() {
+      try {
+        STATE.completeness = await gsGetOverviewCompleteness();
+      } catch (err) {
+        STATE.completeness = {
+          ok: false,
+          warnings: [err && err.message ? err.message : String(err || 'Completeness is unavailable.')]
+        };
+      }
+      renderOverviewCompleteness();
+    }
+
+    function renderOverviewCompleteness() {
+      const c = STATE.completeness || {};
+      const title = document.getElementById('heroTitle');
+      const kicker = document.getElementById('heroKicker');
+      const description = document.getElementById('heroDescription');
+      const actions = document.getElementById('heroActions');
+      const ring = document.getElementById('heroRing');
+      const ringValue = document.getElementById('heroBsvPct');
+      const ringLabel = document.getElementById('heroRingLabel');
+      const ringDetail = document.getElementById('heroBsvDetail');
+      const chips = document.getElementById('siteChips');
+      const missingWrap = document.getElementById('missingKpiWrap');
+      const sub = document.getElementById('completenessSub');
+      const periodLabel = c.periodLabel || ((c.fromMonthName && c.monthName)
+        ? (c.fromMonthName === c.monthName ? c.monthName : c.fromMonthName + '–' + c.monthName) + (c.year ? ' ' + c.year : '')
+        : ((c.monthName || '') + (c.year ? ' ' + c.year : '')));
+      const expectedCount = Number(c.expectedCount) || 0;
+      const canSend = !!c.canSend;
+      const sendBtn = canSend
+        ? '<button id="heroPreviewSend" class="refresh-btn" type="button">Preview &amp; send now</button>'
+        : '';
+      const checklistBtn = '<button id="heroOpenChecklist" class="secondary-btn" type="button">Open checklist</button>';
+
+      title.classList.toggle('is-ok', !!(c.ok && c.selectedCount && !c.missingCount));
+      ring.classList.toggle('is-warn', !!(c.ok && c.missingCount));
+
+      if (!c.ok) {
+        kicker.textContent = 'ALAR · Executive overview';
+        title.textContent = 'Required KPI completeness is unavailable';
+        description.textContent = (c.warnings && c.warnings[0]) || 'January through the last completed month could not be audited yet.';
+        actions.innerHTML = checklistBtn;
+        ringValue.textContent = '—';
+        ringLabel.textContent = 'YTD completeness';
+        ringDetail.textContent = 'Not available';
+        ring.style.setProperty('--hero-progress', '0deg');
+        ring.setAttribute('aria-label', 'Year-to-date completeness not available');
+        chips.innerHTML = '';
+        missingWrap.innerHTML = '<div class="completeness-empty">' + esc((c.warnings && c.warnings[0]) || 'Completeness could not be loaded.') + '</div>';
+        sub.textContent = 'Required KPIs checked for reminders, January through last completed month.';
+        return;
+      }
+
+      kicker.textContent = 'January through last completed month · ' + (periodLabel || '—');
+      if (!c.selectedCount) {
+        title.textContent = 'No required KPIs are monitored yet';
+        description.textContent = 'Open the checklist and tick the KPIs that must be complete each month. Unchecked KPIs never create a reminder.';
+      } else if (!c.missingCount) {
+        title.textContent = 'All required KPIs are complete';
+        description.textContent = 'Every monitored KPI has a value from ' + periodLabel + ', including zeros.';
+      } else {
+        title.textContent = c.missingCount + ' required ' + (c.missingCount === 1 ? 'entry' : 'entries') + ' still missing';
+        description.textContent = c.incompleteSiteCount + ' of 6 sites ' +
+          (c.incompleteSiteCount === 1 ? 'has' : 'have') + ' incomplete required reporting from ' + periodLabel + '. ' +
+          (c.ownersWithoutEmailCount
+            ? c.ownersWithoutEmailCount + ' owner' + (c.ownersWithoutEmailCount === 1 ? ' has' : 's have') + ' no matching email in the directory.'
+            : 'Daily reminder still runs at 08:00.');
+      }
+      actions.innerHTML = sendBtn + checklistBtn;
+
+      const pct = clamp(c.completenessPct || 0, 0, 100);
+      ringValue.textContent = expectedCount ? pct + '%' : '—';
+      ringLabel.textContent = 'YTD completeness';
+      ringDetail.textContent = expectedCount ? (c.completeCount + ' of ' + expectedCount + ' required entries') : 'Required KPIs';
+      ring.style.setProperty('--hero-progress', (pct * 3.6) + 'deg');
+      ring.setAttribute('aria-label', 'Year-to-date completeness ' + (expectedCount ? pct + ' percent' : 'not available'));
+      sub.textContent = 'Required KPIs checked for reminders · ' + (periodLabel || 'January through last completed month') + '.';
+
+      chips.innerHTML = (c.sites || []).map(site => {
+        let status = 'Not monitored';
+        let cls = 'muted';
+        if (site.status === 'complete') { status = 'Complete'; cls = 'ok'; }
+        else if (site.status === 'missing') { status = site.missingCount + ' missing'; cls = 'late'; }
+        return '<div class="site-chip"><strong>' + esc(site.site) + '</strong><span class="' + cls + '">' + esc(status) + '</span></div>';
+      }).join('');
+
+      if (!c.selectedCount) {
+        missingWrap.innerHTML = '<div class="completeness-empty">Select required KPIs in the checklist to monitor this year.</div>';
+      } else if (!(c.missingItems || []).length) {
+        missingWrap.innerHTML = '<div class="completeness-empty">No missing required KPIs from ' + esc(periodLabel) + '.</div>';
+      } else {
+        missingWrap.innerHTML = '';
+      }
+    }
+
+    function renderCharts() {
+      if (!window.Chart) {
+        document.querySelectorAll('.chart-fallback').forEach(el => el.style.display = 'grid');
+        document.querySelectorAll('canvas').forEach(el => el.style.display = 'none');
+        return;
+      }
+      renderBsvChart();
+      renderHoursChart();
+      renderTrendChart();
+      renderEventsChart();
+    }
+
+    function renderBsvChart() {
+      const rows = visibleSites().map(site => {
+        const a = aggregateKindForSite('bsv', site.code);
+        return { label: site.site, actual: a.actual || 0, target: a.target || 0 };
+      }).filter(x => x.actual !== 0 || x.target !== 0);
+      drawChart('bsvChart', 'bar', {
+        labels: rows.map(r => r.label),
+        datasets: [
+          { label:'Actual', data:rows.map(r=>r.actual), backgroundColor: 'rgba(53,95,171,.78)', borderColor:'#355fab', borderWidth:1, borderRadius:8 },
+          { label:'Annual target', data:rows.map(r=>r.target), backgroundColor:'rgba(227,0,17,.16)', borderColor:'#e30011', borderWidth:1.2, borderRadius:8 }
+        ]
+      }, { stacked:false, yZero:true });
+    }
+
+    function renderHoursChart() {
+      const rows = visibleSites().map(site => ({
+        label: site.site,
+        emp: aggregateKindForSite('employee_hours', site.code).actual || 0,
+        con: aggregateKindForSite('contractor_hours', site.code).actual || 0
+      })).filter(x => x.emp !== 0 || x.con !== 0);
+      drawChart('hoursChart', 'bar', {
+        labels: rows.map(r=>r.label),
+        datasets: [
+          { label:'ALAR employees', data:rows.map(r=>r.emp), backgroundColor:'rgba(53,95,171,.82)', borderRadius:7 },
+          { label:'Contractors', data:rows.map(r=>r.con), backgroundColor:'rgba(128,145,171,.52)', borderRadius:7 }
+        ]
+      }, { stacked:true, yZero:true });
+    }
+
+    function renderTrendChart() {
+      const labels = STATE.data.months.map(m => m.slice(0,3));
+      let values = [];
+      let title = document.getElementById('trendSelect').selectedOptions[0].text;
+      if (STATE.trend === 'total_hours') {
+        values = labels.map((_,i) => safeAdd(monthAggregate('employee_hours',i), monthAggregate('contractor_hours',i)));
+      } else if (STATE.trend === 'unsafe') {
+        values = labels.map((_,i) => safeAdd(monthAggregate('unsafe_condition',i), monthAggregate('unsafe_act',i)));
+      } else {
+        values = labels.map((_,i) => monthAggregate(STATE.trend,i));
+      }
+
+      drawChart('trendChart', 'line', {
+        labels,
+        datasets:[{
+          label:title, data:values, borderColor:'#355fab', backgroundColor:'rgba(53,95,171,.12)',
+          pointBackgroundColor:'#355fab', pointRadius:3, pointHoverRadius:5, borderWidth:2.2, tension:.36, fill:true, spanGaps:true
+        }]
+      }, { yZero:true });
+    }
+
+    function renderEventsChart() {
+      const kinds = ['fatal','lta','nlta','psse','pse','first_aid','commuting','environment_incident'];
+      const vals = kinds.map(k => aggregateKind(k).actual || 0);
+      drawChart('eventsChart', 'bar', {
+        labels:kinds.map(k=>KIND_LABELS[k] || k),
+        datasets:[{ label:'Events', data:vals, backgroundColor: vals.map((_,i)=> i < 3 ? 'rgba(227,0,17,.72)' : 'rgba(53,95,171,.65)'), borderRadius:7 }]
+      }, { horizontal:true, xZero:true, legend:false });
+    }
+
+    function drawChart(id, type, data, opts={}) {
+      destroyChart(id);
+      const ctx = document.getElementById(id).getContext('2d');
+      const text = cssVar('--text');
+      const muted = cssVar('--muted');
+      const line = cssVar('--line');
+      STATE.charts[id] = new Chart(ctx, {
+        type,
+        data,
+        options:{
+          responsive:true, maintainAspectRatio:false, animation:{duration:450},
+          indexAxis: opts.horizontal ? 'y' : 'x',
+          interaction:{mode:'index', intersect:false},
+          plugins:{
+            legend:{display: opts.legend !== false, position:'bottom', labels:{color:muted, boxWidth:11, boxHeight:11, usePointStyle:true, padding:18, font:{size:10}}},
+            tooltip:{backgroundColor:'rgba(15,23,42,.93)', titleColor:'#fff', bodyColor:'#fff', padding:11, cornerRadius:10}
+          },
+          scales:{
+            x:{stacked:!!opts.stacked, beginAtZero:!!opts.xZero, grid:{color:line, drawBorder:false}, ticks:{color:muted, font:{size:10}}},
+            y:{stacked:!!opts.stacked, beginAtZero:!!opts.yZero, grid:{color:line, drawBorder:false}, ticks:{color:muted, font:{size:10}}}
+          }
+        }
+      });
+    }
+
+    function destroyChart(id) {
+      if (STATE.charts[id]) { STATE.charts[id].destroy(); delete STATE.charts[id]; }
+    }
+
+    function renderTablesAndOwners() {
+      renderSiteTable();
+      renderOwners();
+      renderKpiTable();
+    }
+
+    function renderSiteTable() {
+      const sites = visibleSites();
+      const body = document.getElementById('siteTableBody');
+      if (!sites.length) { body.innerHTML = `<tr><td colspan="9" class="empty">No site data available.</td></tr>`; return; }
+      body.innerHTML = sites.map(site => {
+        const emp = aggregateKindForSite('employee_hours',site.code);
+        const con = aggregateKindForSite('contractor_hours',site.code);
+        const hours = safeAdd(emp.actual, con.actual);
+        const bsv = aggregateKindForSite('bsv',site.code);
+        const unsafe = aggregateKindsForSite(['unsafe_condition','unsafe_act'],site.code);
+        const walk = aggregateKindForSite('walkthrough',site.code);
+        const drills = aggregateKindForSite('emergency_drill',site.code);
+        const lsr = aggregateKindForSite('lsr_breach',site.code);
+        const safety = aggregateKindsForSite(['fatal','lta','nlta','psse','pse','commuting','first_aid'],site.code);
+        const last = site.latestMonthIndex >= 0 ? STATE.data.months[site.latestMonthIndex] : 'No data';
+        const bsvDisplay = bsv.actual == null && bsv.target == null ? '—' : `${fmt(bsv.actual,0)} / ${fmt(bsv.target,0)}`;
+        return `<tr>
+          <td class="site-name">${esc(site.site)}</td><td class="nowrap muted">${esc(last)}</td><td>${fmt(hours,0)}</td>
+          <td><span class="badge ${statusForAggregate(bsv)}">${bsvDisplay}</span></td><td>${fmt(unsafe.actual,0)}</td><td>${fmt(walk.actual,0)}</td>
+          <td>${fmt(drills.actual,0)}</td><td>${fmt(lsr.actual,0)}</td><td><span class="badge ${statusForAggregate(safety)}">${fmt(safety.actual,0)}</span></td>
+        </tr>`;
+      }).join('');
+    }
+
+    function renderOwners() {
+      const ownerMap = {};
+      filteredSiteMetrics().filter(m => !m.derived).forEach(m => {
+        (m.owners || []).forEach(owner => {
+          if (!ownerMap[owner]) ownerMap[owner] = { name:owner, count:0, sites:new Set(), categories:new Set() };
+          ownerMap[owner].count++;
+          ownerMap[owner].sites.add(m.site);
+          ownerMap[owner].categories.add(m.category);
+        });
+      });
+      const owners = Object.values(ownerMap).sort((a,b)=>b.count-a.count || a.name.localeCompare(b.name)).slice(0,8);
+      const el = document.getElementById('ownersGrid');
+      if (!owners.length) { el.innerHTML = `<div class="empty glass" style="border-radius:20px">No KPI owner assignments found in the selected scope.</div>`; return; }
+      el.innerHTML = owners.map(o => `<div class="owner-card glass"><div class="owner-name">${esc(o.name)}</div><div class="owner-meta">${o.count} KPI assignment${o.count===1?'':'s'}<br>${esc([...o.sites].slice(0,3).join(' · '))}</div></div>`).join('');
+    }
+
+    function renderKpiTable() {
+      let metrics = filteredSiteMetrics();
+      if (STATE.category !== 'ALL') metrics = metrics.filter(m => m.category === STATE.category);
+      if (STATE.search) {
+        metrics = metrics.filter(m => [m.label,m.site,m.procedure,m.objective,(m.owners||[]).join(' ')].join(' ').toLowerCase().includes(STATE.search));
+      }
+      metrics = metrics.slice().sort((a,b) => {
+        const sa = statusRank(statusForMetric(a)), sb = statusRank(statusForMetric(b));
+        return sa - sb || a.site.localeCompare(b.site) || a.category.localeCompare(b.category) || a.label.localeCompare(b.label);
+      });
+
+      document.getElementById('kpiCount').textContent = `${metrics.length} metrics in current view`;
+      const body = document.getElementById('kpiTableBody');
+      if (!metrics.length) { body.innerHTML = `<tr><td colspan="8" class="empty">No KPI matches the current filters.</td></tr>`; return; }
+
+      body.innerHTML = metrics.map(m => {
+        const actual = metricActual(m);
+        const st = statusForMetric(m);
+        const latest = m.latestMonthIndex >= 0 ? STATE.data.months[m.latestMonthIndex].slice(0,3) : '—';
+        const owner = (m.owners || []).join(', ') || '—';
+        return `<tr class="kpi-row" data-id="${esc(m.id)}">
+          <td class="site-name nowrap">${esc(m.site)}</td>
+          <td class="metric-name">${esc(m.label)}${m.derived ? ' <span class="badge neutral">Derived</span>' : ''}</td>
+          <td><span class="badge neutral">${esc(m.category)}</span></td>
+          <td class="muted">${esc(owner)}</td>
+          <td class="nowrap">${displayTarget(m)}</td>
+          <td class="nowrap"><strong>${displayActual(m,actual)}</strong></td>
+          <td class="nowrap muted">${esc(latest)}</td>
+          <td><span class="badge ${st}">${statusText(st)}</span></td>
+        </tr>`;
+      }).join('');
+
+      body.querySelectorAll('.kpi-row').forEach(row => row.addEventListener('click', () => openMetric(row.dataset.id)));
+    }
+
+    function openMetric(id) {
+      const m = STATE.data.metricsById[id];
+      if (!m) return;
+      document.getElementById('modalSite').textContent = `${m.site} · ${m.category}`;
+      document.getElementById('modalTitle').textContent = m.label;
+      const actual = metricActual(m);
+      document.getElementById('modalStats').innerHTML = [
+        ['Target', displayTarget(m)], ['Selected actual', displayActual(m,actual)],
+        ['Latest month', m.latestMonthIndex >= 0 ? STATE.data.months[m.latestMonthIndex] : '—'],
+        ['Owner', esc((m.owners||[]).join(', ') || '—')]
+      ].map(([l,v]) => `<div class="modal-stat"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
+      document.getElementById('modalObjective').innerHTML = `<strong>Source:</strong> ${esc(m.sheet)} · Row ${m.row}<br><strong>Procedure:</strong> ${esc(m.procedure || '—')}<br><strong>Objective / formula:</strong><br>${esc(m.objective || '—')}`;
+      document.getElementById('metricModal').classList.add('show');
+
+      if (window.Chart) {
+        if (STATE.modalChart) STATE.modalChart.destroy();
+        const ctx = document.getElementById('modalChart').getContext('2d');
+        STATE.modalChart = new Chart(ctx, {
+          type:'line',
+          data:{labels:STATE.data.months.map(x=>x.slice(0,3)), datasets:[{label:m.label, data:m.monthly, borderColor:'#355fab', backgroundColor:'rgba(53,95,171,.10)', fill:true, tension:.35, spanGaps:true, pointRadius:3}]},
+          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:cssVar('--muted')}},y:{beginAtZero:true,grid:{color:cssVar('--line')},ticks:{color:cssVar('--muted')}}}}
+        });
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('metricModal').classList.remove('show');
+    }
+
+    function filteredSiteMetrics() {
+      if (!STATE.data) return [];
+      return STATE.site === 'ALL' ? STATE.data.metrics : STATE.data.metrics.filter(m => m.siteCode === STATE.site);
+    }
+
+    function visibleSites() {
+      if (!STATE.data) return [];
+      return STATE.site === 'ALL' ? STATE.data.sites : STATE.data.sites.filter(s => s.code === STATE.site);
+    }
+
+    function aggregateKind(kind) { return aggregateMetrics(filteredSiteMetrics().filter(m => m.kind === kind && !m.derived)); }
+    function aggregateKinds(kinds) { return aggregateMetrics(filteredSiteMetrics().filter(m => kinds.includes(m.kind) && !m.derived)); }
+    function aggregateKindForSite(kind, code) { return aggregateMetrics(STATE.data.metrics.filter(m => m.siteCode === code && m.kind === kind && !m.derived)); }
+    function aggregateKindsForSite(kinds, code) { return aggregateMetrics(STATE.data.metrics.filter(m => m.siteCode === code && kinds.includes(m.kind) && !m.derived)); }
+
+    function aggregateMetrics(metrics) {
+      const actuals = metrics.map(metricActual).filter(isNum);
+      const targets = metrics.map(m => m.annualTarget).filter(isNum);
+      const hasPercent = metrics.some(m => m.isPercent);
+      const higherOrLower = metrics.find(m => m.direction !== 'neutral');
+      const direction = higherOrLower ? higherOrLower.direction : 'neutral';
+      let actual = null, target = null;
+      if (actuals.length) actual = hasPercent ? avg(actuals) : sum(actuals);
+      if (targets.length) target = hasPercent ? avg(targets) : sum(targets);
+      return { actual, target, direction, countReporting: actuals.length, metrics };
+    }
+
+    function metricActual(m) {
+      if (STATE.period === 'YTD') return m.ytdActual;
+      const idx = Number(STATE.period);
+      return Number.isInteger(idx) ? m.monthly[idx] : m.ytdActual;
+    }
+
+    function monthAggregate(kind, monthIndex) {
+      const metrics = filteredSiteMetrics().filter(m => m.kind === kind && !m.derived);
+      const vals = metrics.map(m => m.monthly[monthIndex]).filter(isNum);
+      if (!vals.length) return null;
+      return metrics.some(m => m.isPercent) ? avg(vals) : sum(vals);
+    }
+
+    function progressFor(a) { return ratioPct(a.actual,a.target); }
+
+    function statusForAggregate(a) {
+      if (!a || a.actual == null || a.target == null || a.direction === 'neutral') return 'neutral';
+      if (a.direction === 'lower') return a.actual <= a.target ? 'good' : 'bad';
+      const threshold = targetThresholdForPeriod(a.target, a.metrics);
+      if (threshold == null || threshold === 0) return a.actual >= a.target ? 'good' : 'neutral';
+      const ratio = a.actual / threshold;
+      if (ratio >= 1) return 'good';
+      if (ratio >= .85) return 'warn';
+      return 'bad';
+    }
+
+    function statusForMetric(m) {
+      const actual = metricActual(m);
+      if (m.derived || actual == null || m.annualTarget == null || m.direction === 'neutral') return 'neutral';
+      if (m.direction === 'lower') return actual <= m.annualTarget ? 'good' : 'bad';
+      const threshold = targetThresholdForMetric(m);
+      if (threshold == null || threshold === 0) return actual >= m.annualTarget ? 'good' : 'neutral';
+      const ratio = actual / threshold;
+      if (ratio >= 1) return 'good';
+      if (ratio >= .85) return 'warn';
+      return 'bad';
+    }
+
+    function targetThresholdForPeriod(annualTarget, metrics) {
+      if (annualTarget == null) return null;
+      if (!metrics || !metrics.length) return annualTarget;
+      if (metrics.some(m => m.isPercent)) return annualTarget;
+      if (metrics.some(m => m.direction === 'lower')) return annualTarget;
+      if (metrics.every(m => m.aggregation !== 'sum')) return annualTarget;
+      return prorateTarget(annualTarget);
+    }
+
+    function targetThresholdForMetric(m) {
+      if (m.annualTarget == null) return null;
+      if (m.isPercent || m.direction === 'lower' || m.aggregation !== 'sum') return m.annualTarget;
+      return prorateTarget(m.annualTarget);
+    }
+
+    function prorateTarget(annualTarget) {
+      if (STATE.period !== 'YTD') return annualTarget / 12;
+      const r = STATE.data.reporting || {};
+      const idx = r.globalLatestMonthIndex >= 0 ? r.globalLatestMonthIndex : 11;
+      return annualTarget * (idx + 1) / 12;
+    }
+
+    function displayTarget(m) {
+      if (m.annualTarget == null) return esc(m.targetRaw || '—');
+      return m.isPercent ? fmtPercent(m.annualTarget) : fmt(m.annualTarget, 1);
+    }
+
+    function displayActual(m, actual) {
+      if (actual == null) return '—';
+      return m.isPercent ? fmtPercent(actual) : fmt(actual, 1);
+    }
+
+    function siteNameByCode(code) { return (STATE.data.sites.find(s => s.code === code) || {}).site || code; }
+
+    function updateSyncUI() {
+      const dt = new Date(STATE.data.generatedAt);
+      const t = dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      document.getElementById('syncText').textContent = `Live · ${t}`;
+      document.getElementById('syncPill').classList.remove('loading');
+    }
+
+    function startAutoRefresh() {
+      clearInterval(STATE.autoRefreshTimer);
+      const seconds = (STATE.data && STATE.data.autoRefreshSeconds) || (STATE.meta && STATE.meta.autoRefreshSeconds) || 60;
+      STATE.autoRefreshTimer = setInterval(() => { if (!document.hidden) refreshData(false); }, seconds * 1000);
+    }
+
+    function renderLoaderSteps() {
+      document.getElementById('loaderSteps').innerHTML = LOAD_STEPS.map((s,i)=>`<div id="loadItem${i}" class="load-item"><span class="dot">✓</span><span>${esc(s)}</span></div>`).join('');
+    }
+
+    function setLoad(pct, text, completedIndex) {
+      document.getElementById('loaderPct').textContent = `${pct}%`;
+      document.getElementById('loaderFill').style.width = `${pct}%`;
+      document.getElementById('loaderStep').textContent = text;
+      LOAD_STEPS.forEach((_,i) => {
+        const el = document.getElementById(`loadItem${i}`);
+        if (!el) return;
+        el.classList.remove('active','done');
+        if (i <= completedIndex) el.classList.add('done');
+        else if (i === completedIndex + 1) el.classList.add('active');
+      });
+    }
+
+    function showLoadError(err) {
+      const msg = err && err.message ? err.message : String(err || 'Unknown error');
+      document.getElementById('loaderStep').textContent = 'Dashboard could not load';
+      document.getElementById('loaderError').innerHTML = `${esc(msg)}<br><br>If this is the first run, execute <strong>setupDashboard()</strong> once from the bound Apps Script editor, authorize it, then deploy/reload the Web App.`;
+      document.getElementById('loaderError').classList.add('show');
+    }
+
+    function syncThemeButton() {
+      const dark = document.documentElement.dataset.theme === 'dark';
+      const btn = document.getElementById('themeBtn');
+      if (btn) btn.textContent = dark ? 'Light' : 'Dark';
+    }
+
+    function initTheme() {
+      const saved = localStorage.getItem('alarHseTheme');
+      const dark = saved ? saved === 'dark' : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      syncThemeButton();
+    }
+
+    function toggleTheme() {
+      const dark = document.documentElement.dataset.theme !== 'dark';
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      localStorage.setItem('alarHseTheme', dark ? 'dark' : 'light');
+      syncThemeButton();
+      if (STATE.data) renderCharts();
+    }
+
+    function statusText(s) { return s === 'good' ? 'On track' : s === 'warn' ? 'Watch' : s === 'bad' ? 'Gap' : 'Monitor'; }
+    function statusRank(s) { return s === 'bad' ? 0 : s === 'warn' ? 1 : s === 'neutral' ? 2 : 3; }
+    function ratioPct(a,b) { return isNum(a) && isNum(b) && b !== 0 ? a / b * 100 : null; }
+    function safeAdd(a,b) { return (isNum(a) ? a : 0) + (isNum(b) ? b : 0); }
+    function sum(arr) { return arr.reduce((a,b)=>a+b,0); }
+    function avg(arr) { return arr.length ? sum(arr)/arr.length : null; }
+    function isNum(v) { return typeof v === 'number' && Number.isFinite(v); }
+    function clamp(v,min,max) { return Math.max(min,Math.min(max,v)); }
+
+    function fmt(v, decimals=0) {
+      if (!isNum(v)) return '—';
+      const abs = Math.abs(v);
+      const d = abs >= 100 ? 0 : decimals;
+      return new Intl.NumberFormat(undefined,{maximumFractionDigits:d,minimumFractionDigits:0}).format(v);
+    }
+    function fmtPercent(v) { return isNum(v) ? `${fmt(v,1)}%` : '—'; }
+    function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+    function esc(value) {
+      return String(value == null ? '' : value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    }
+    function escAttr(value) { return esc(value); }
+  </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+.clasp.json
+.clasprc.json
+.cursor/
+*.tmp
+_syntax_check.js
+Code.js

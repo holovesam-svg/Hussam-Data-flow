@@ -1,0 +1,8 @@
+.clasp.json
+.clasprc.json
+node_modules/
+.DS_Store
+*.tmp
+_syntax_check.js
+pptx_extract/
+pptx_extract2/
