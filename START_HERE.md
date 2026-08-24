@@ -105,6 +105,68 @@ Share the Operations spreadsheet with accounts that need to view or manage remin
 
 https://docs.google.com/spreadsheets/d/1nm1l9Vuj3ztU8OD06oDpkUoqSX-P-Zb1yliULmYUdDg/edit
 
+## Continue on another laptop
+
+Use this when moving to a new machine (e.g. another Cursor laptop).
+
+### 1. Clone the repo
+
+```powershell
+git clone https://github.com/holovesam-svg/Hussam-Data-flow
+cd Hussam-Data-flow
+```
+
+### 2. Clasp local config
+
+```powershell
+copy .clasp.json.example .clasp.json
+```
+
+Edit `.clasp.json` and set:
+
+```json
+{
+  "scriptId": "14GqScftxmx-RahW6TdYtwLAJRyEWPD5m5EU_GvYG6yyNWwJ8YACmVFSo",
+  "rootDir": "."
+}
+```
+
+**Do not commit `.clasp.json`** — it is gitignored.
+
+### 3. Push code to Apps Script
+
+```powershell
+npm install -g @google/clasp
+clasp login
+clasp push --force
+```
+
+### 4. Script properties
+
+In the [Apps Script editor](https://script.google.com/home/projects/14GqScftxmx-RahW6TdYtwLAJRyEWPD5m5EU_GvYG6yyNWwJ8YACmVFSo/edit) → **Project Settings** (gear) → **Script properties**:
+
+| Property | Purpose |
+|---|---|
+| `GEMINI_API_KEY` | Optional — enables **Summarize with Gemini** on Hub Home |
+
+### 5. Live web app URL
+
+After deploy (or if already deployed), open:
+
+https://script.google.com/macros/s/AKfycbxglDjvaFmCBhp5xZFS74Rc0u40GMQ4Rm0f1OZj83VhD20MRUb1sfBBDg8MabvshF7sAQ/exec
+
+After code changes: `clasp push --force`, then **Deploy → Manage deployments → Edit → New version → Deploy**.
+
+### 6. HSE KPI Dashboard (separate repo)
+
+The HSE KPI dashboard is its own Apps Script project — clone separately:
+
+```powershell
+git clone https://github.com/holovesam-svg/HSE-KPI-Dashboard
+```
+
+See that repo’s `START_HERE_CURSOR.md` for clasp setup, script ID, and deployment.
+
 ## Files
 
 - `Code.gs` — hub API, Focus Assistant, audit reminders

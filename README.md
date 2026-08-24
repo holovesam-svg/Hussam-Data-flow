@@ -13,6 +13,8 @@ Air Liquide ALAR operations data stack — multi-section hub, HSE KPI dashboard,
 
 See [START_HERE.md](START_HERE.md) for clasp setup, authorization, and deployment.
 
+**Moving to another laptop?** See [Continue on another laptop](START_HERE.md#continue-on-another-laptop) in START_HERE.md.
+
 ### Clasp (Operations Hub)
 
 ```powershell
